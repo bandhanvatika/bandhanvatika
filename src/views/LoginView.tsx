@@ -48,25 +48,53 @@ export const LoginView: React.FC = () => {
           </div>
 
           {/* Center Visual Motif & Features (Visible on large screens) */}
-          <div className="hidden lg:block my-8 relative z-10 space-y-4">
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs space-y-3">
-              <div className="text-xs uppercase tracking-wider text-[#D4AF37] font-bold">
-                V1 Production Management
+          <div className="hidden lg:block my-6 relative z-10 space-y-4">
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs space-y-3.5">
+              <div>
+                <h3 className="text-sm font-bold text-[#F3E7C4] font-brand tracking-wide">
+                  A Complete Venue for Your Celebration
+                </h3>
+                <p className="text-xs text-stone-300 mt-1 leading-relaxed">
+                  Everything you need under one roof — from the ceremony to the stay.
+                </p>
               </div>
-              <ul className="text-xs sm:text-sm text-stone-300 space-y-2.5">
-                <li className="flex items-center space-x-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#C5A059] shrink-0" />
-                  <span>Real-time Hall & Guest Room availability with zero double-booking</span>
-                </li>
-                <li className="flex items-center space-x-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#C5A059] shrink-0" />
-                  <span>Itemized billing, advance tracking & GST invoice generation</span>
-                </li>
-                <li className="flex items-center space-x-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#C5A059] shrink-0" />
-                  <span>Role-based access control with comprehensive audit trail</span>
-                </li>
-              </ul>
+
+              <div className="pt-2 border-t border-white/10">
+                <div className="text-[11px] uppercase tracking-wider text-[#D4AF37] font-bold mb-2.5 flex items-center space-x-1.5">
+                  <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                  <span>Bandhan Vatika Highlights</span>
+                </div>
+                <ul className="text-xs text-stone-200 space-y-2">
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                    <span>Spacious banquet halls (Capacity up to 400 guests)</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                    <span>4 Halls (3 AC, 1 Non-AC)</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                    <span>Bandhan Vatika Stage Setup & Stage setup area</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                    <span>Catering & Decoration available</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                    <span>10 guest rooms (6 AC, 4 Non-AC)</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                    <span>Parking support</span>
+                  </li>
+                  <li className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                    <span>Easy road access on Ara-Buxar Main Road</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 

@@ -134,11 +134,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     'HALL-B': {
       pill: 'bg-stone-800 text-stone-100 border-l-4 border-stone-400',
     },
-    'LAWN-1': {
-      pill: 'bg-emerald-900 text-emerald-100 border-l-4 border-emerald-400',
-    },
     'HALL-C': {
-      pill: 'bg-purple-900 text-purple-100 border-l-4 border-purple-400',
+      pill: 'bg-amber-900 text-amber-100 border-l-4 border-amber-400',
+    },
+    'HALL-D': {
+      pill: 'bg-teal-900 text-teal-100 border-l-4 border-teal-400',
     },
   };
 
@@ -309,7 +309,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           }`}
         >
           <span className="w-2.5 h-2.5 rounded-full bg-[#C5A059]" />
-          <span>Grand Hall (HALL-A)</span>
+          <span>Grand Banquet (HALL-A · AC)</span>
         </button>
         <button
           onClick={() => setSelectedHall('HALL-B')}
@@ -319,30 +319,30 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
           }`}
         >
-          <span className="w-2.5 h-2.5 rounded-full bg-stone-600" />
-          <span>Royal Hall (HALL-B)</span>
-        </button>
-        <button
-          onClick={() => setSelectedHall('LAWN-1')}
-          className={`px-3 py-1.5 rounded-xl font-medium transition-all flex items-center space-x-1.5 ${
-            selectedHall === 'LAWN-1'
-              ? 'bg-emerald-900 text-emerald-100 font-bold ring-2 ring-emerald-400'
-              : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-          }`}
-        >
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-          <span>Garden Lawn (LAWN-1)</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-stone-500" />
+          <span>Royal Hall (HALL-B · AC)</span>
         </button>
         <button
           onClick={() => setSelectedHall('HALL-C')}
           className={`px-3 py-1.5 rounded-xl font-medium transition-all flex items-center space-x-1.5 ${
             selectedHall === 'HALL-C'
-              ? 'bg-purple-900 text-purple-100 font-bold ring-2 ring-purple-400'
+              ? 'bg-amber-900 text-amber-100 font-bold ring-2 ring-amber-400'
               : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
           }`}
         >
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-          <span>Party Hall (HALL-C)</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+          <span>Shagun Hall (HALL-C · AC)</span>
+        </button>
+        <button
+          onClick={() => setSelectedHall('HALL-D')}
+          className={`px-3 py-1.5 rounded-xl font-medium transition-all flex items-center space-x-1.5 ${
+            selectedHall === 'HALL-D'
+              ? 'bg-teal-900 text-teal-100 font-bold ring-2 ring-teal-400'
+              : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+          }`}
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+          <span>Utsav Hall (HALL-D · Non-AC)</span>
         </button>
       </div>
 
@@ -502,19 +502,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </span>
               <div className="flex items-center space-x-1.5">
                 <span className="w-3 h-3 rounded-md bg-[#14281D] border border-[#C5A059]" />
-                <span>Grand Hall (HALL-A)</span>
+                <span>Grand Banquet (HALL-A · AC)</span>
               </div>
               <div className="flex items-center space-x-1.5">
                 <span className="w-3 h-3 rounded-md bg-stone-800 border border-stone-400" />
-                <span>Royal Hall (HALL-B)</span>
+                <span>Royal Hall (HALL-B · AC)</span>
               </div>
               <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-md bg-emerald-900 border border-emerald-400" />
-                <span>Garden Lawn (LAWN-1)</span>
+                <span className="w-3 h-3 rounded-md bg-amber-900 border border-amber-400" />
+                <span>Shagun Hall (HALL-C · AC)</span>
               </div>
               <div className="flex items-center space-x-1.5">
-                <span className="w-3 h-3 rounded-md bg-purple-900 border border-purple-400" />
-                <span>Party Hall (HALL-C)</span>
+                <span className="w-3 h-3 rounded-md bg-teal-900 border border-teal-400" />
+                <span>Utsav Hall (HALL-D · Non-AC)</span>
               </div>
             </div>
 

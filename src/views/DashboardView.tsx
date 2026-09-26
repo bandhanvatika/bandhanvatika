@@ -83,7 +83,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Welcome back, {user?.name || 'Administrator'}
           </h1>
           <p className="text-xs sm:text-sm text-stone-300 mt-1 max-w-xl">
-            Today is a productive day. All venues, guest rooms, and billing schedules are synchronized with zero conflicts.
+            A Complete Venue for Your Celebration — Everything you need under one roof, from the ceremony to the stay. Easy road access on Ara-Buxar Main Road.
           </p>
         </div>
 
@@ -186,12 +186,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               </div>
               <div className="mt-3 flex items-baseline justify-between">
-                <span className="text-2xl font-black font-brand text-[#14281D]">{data?.hallsCount || 3}</span>
+                <span className="text-2xl font-black font-brand text-[#14281D]">{data?.hallsCount || 4}</span>
                 <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
                   Active Venues
                 </span>
               </div>
-              <p className="text-[11px] text-stone-400 mt-1">Banquet halls & lawn spaces</p>
+              <p className="text-[11px] text-stone-400 mt-1">4 Halls (3 AC, 1 Non-AC) · Up to 400</p>
             </div>
 
             {/* Guest Rooms Count */}
@@ -208,7 +208,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Rooms Ready
                 </span>
               </div>
-              <p className="text-[11px] text-stone-400 mt-1">Bridal suites & accommodation</p>
+              <p className="text-[11px] text-stone-400 mt-1">10 Rooms (6 AC, 4 Non-AC)</p>
             </div>
           </>
         )}
@@ -312,8 +312,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <Landmark className="w-4 h-4" />
                   </div>
                   <div>
-                    <h5 className="text-xs font-bold text-stone-800">4 Banquets & Lawns</h5>
-                    <p className="text-[10px] text-stone-400">Grand, Royal, Garden, Party</p>
+                    <h5 className="text-xs font-bold text-stone-800">4 Halls (3 AC, 1 Non-AC)</h5>
+                    <p className="text-[10px] text-stone-400">Capacity up to 400 · Stage setup area</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-stone-400" />
@@ -328,8 +328,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <h5 className="text-xs font-bold text-stone-800">4 Deluxe Guest Rooms</h5>
-                    <p className="text-[10px] text-stone-400">101, 102, 201, 301 Suite</p>
+                    <h5 className="text-xs font-bold text-stone-800">10 Guest Rooms (6 AC, 4 Non-AC)</h5>
+                    <p className="text-[10px] text-stone-400">Accommodates families & bridal stay</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-stone-400" />
