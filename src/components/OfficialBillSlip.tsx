@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrandCrestImg } from './BrandLogo.tsx';
-import { amountToIndianWords } from './PrintReceipt.tsx';
+import { amountToIndianWords } from '../utils/numberToWords.ts';
 
 export interface OfficialBillItem {
   id?: string;
