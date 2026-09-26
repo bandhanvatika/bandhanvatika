@@ -75,6 +75,7 @@ export function printElement(
           }
           /* Ensure print target is visible and fills A4 properly */
           .print-receipt-container,
+          .official-bill-wrapper,
           #bandhan-print-receipt,
           #printable-invoice,
           #quotation-print-voucher {

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { PrintReceipt, PrintReceiptData } from '../components/PrintReceipt.tsx';
 import { printElement } from '../utils/print.ts';
 import { BrandLogo } from '../components/BrandLogo.tsx';
+import { OfficialBillSlip } from '../components/OfficialBillSlip.tsx';
 import {
   ReceiptText,
   Plus,
@@ -48,6 +49,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
 
   // View / Print Modal
   const [activeInvoice, setActiveInvoice] = useState<Invoice | null>(null);
+  const [billFormat, setBillFormat] = useState<'RED_BOOKLET' | 'STANDARD_TAX'>('RED_BOOKLET');
   const [printReceiptData, setPrintReceiptData] = useState<PrintReceiptData | null>(null);
 
   // Cancel Modal
@@ -67,9 +69,31 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
     { description: 'Deluxe AC Guest Rooms (2 Nights)', quantity: 2, rate: 3500, amount: 7000 },
   ]);
   const [discount, setDiscount] = useState(0);
+  const [taxPercent, setTaxPercent] = useState(5);
   const [initialStatus, setInitialStatus] = useState<'ISSUED' | 'DRAFT'>('ISSUED');
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const handleApplyJeevikaTemplate = () => {
+    const jeevikaCust = customers.find(
+      (c) => c.name.toLowerCase().includes('jeevika') || c.customerCode?.toLowerCase().includes('jeevika')
+    );
+    if (jeevikaCust) {
+      setCustomerId(jeevikaCust.id);
+    }
+    setEventType('Jeevika Staff Training (Food Program)');
+    setTaxPercent(5);
+    setDiscount(0);
+    setItems([
+      {
+        description: '2-Day Staff Training (35 Persons x 2 Days = 70 Plates: Breakfast + Lunch + Dinner)',
+        quantity: 70,
+        rate: 514.29,
+        amount: 36000,
+      },
+    ]);
+    setNotes('Hall allocated complimentary for Jeevika Training program. Billing exclusively for food/catering with 5% GST.');
+  };
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -152,6 +176,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
         dueDate,
         items,
         discount,
+        taxPercent,
         notes,
         status: initialStatus,
       }),
@@ -160,6 +185,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
     if (res.success) {
       setShowCreate(false);
       fetchInvoices();
+      if (res.data) {
+        const cust = customers.find((c) => c.id === res.data.customerId);
+        setActiveInvoice({ ...res.data, customer: cust });
+      }
     } else {
       setErrorMsg(res.error?.message || 'Failed to create invoice.');
     }
@@ -398,246 +427,330 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
         <Modal
           isOpen={!!activeInvoice}
           onClose={() => setActiveInvoice(null)}
-          title={`Tax Invoice #${activeInvoice.invoiceNumber}`}
-          subtitle="Bandhan Vatika Official GST Tax Invoice"
+          title={`Bandhan Vatika Official Bill #${activeInvoice.invoiceNumber}`}
+          subtitle="Official Bandhan Vatika Bill / Invoice"
           maxWidth="4xl"
         >
-          <div className="space-y-6">
+          <div className="space-y-4">
+            {/* Format Switcher */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between no-print bg-stone-100 p-2 rounded-xl gap-2">
+              <div className="flex items-center space-x-1.5">
+                <button
+                  type="button"
+                  onClick={() => setBillFormat('RED_BOOKLET')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                    billFormat === 'RED_BOOKLET'
+                      ? 'bg-[#B91C1C] text-white shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  <span>🔴</span>
+                  <span>Official Bill (Booklet Format)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillFormat('STANDARD_TAX')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                    billFormat === 'STANDARD_TAX'
+                      ? 'bg-[#14281D] text-[#F3E7C4] shadow-xs'
+                      : 'text-stone-600 hover:text-stone-900'
+                  }`}
+                >
+                  <span>📄</span>
+                  <span>Standard A4 Tax Invoice</span>
+                </button>
+              </div>
+              <span className="text-[11px] text-stone-500">
+                {billFormat === 'RED_BOOKLET' ? '🔴 Exact physical red printed voucher' : 'Corporate multi-column format'}
+              </span>
+            </div>
+
             <div
               id="printable-invoice"
-              className="bg-white p-6 sm:p-10 rounded-2xl border border-stone-200 text-stone-900 font-sans shadow-xs"
+              className="bg-white p-2 sm:p-4 rounded-xl text-stone-900 font-sans"
             >
-              {/* Header: Company & Title */}
-              <div className="flex flex-col sm:flex-row justify-between items-start pb-6 border-b-2 border-stone-800 gap-4">
-                <div className="space-y-1">
-                  <div className="text-[11px] font-bold text-[#8B6B23] tracking-widest uppercase">
-                    ॥ श्री गणेशाय नमः ॥
-                  </div>
-                  <BrandLogo variant="print" />
-                  <p className="text-xs text-stone-700 max-w-sm pt-1 font-medium leading-relaxed">
-                    {(activeInvoice as any).parsedSnapshot?.address || settings?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)'}
-                  </p>
-                  <p className="text-xs font-bold text-stone-800">
-                    मो० नं० (Mob.) : 9431086933, 8409480911, 9015755799
-                  </p>
-                  <p className="text-xs font-mono font-bold text-[#14281D]">
-                    GSTIN: {(activeInvoice as any).parsedSnapshot?.gstin || settings?.gstin || '10AAAAA0000A1Z5'}
-                  </p>
-                </div>
+              {billFormat === 'RED_BOOKLET' ? (
+                <OfficialBillSlip
+                  billNumber={activeInvoice.invoiceNumber?.replace('BV-INV-', '') || activeInvoice.invoiceNumber}
+                  date={
+                    activeInvoice.invoiceDate
+                      ? new Date(activeInvoice.invoiceDate).toLocaleDateString('en-GB')
+                      : activeInvoice.createdAt
+                      ? new Date(activeInvoice.createdAt).toLocaleDateString('en-GB')
+                      : new Date().toLocaleDateString('en-GB')
+                  }
+                  billType="FOOD BILL"
+                  customerName={(activeInvoice as any).parsedSnapshot?.customerName || activeInvoice.customer?.name || ''}
+                  customerAddress={(activeInvoice as any).parsedSnapshot?.customerAddress || activeInvoice.customer?.address || 'Pakariyabar, Chandwa, Ara'}
+                  customerMobile={(activeInvoice as any).parsedSnapshot?.customerMobile || activeInvoice.customer?.mobile || ''}
+                  customerGstin={(activeInvoice as any).parsedSnapshot?.customerGstin || (activeInvoice.customer as any)?.gstin || ''}
+                  items={
+                    Array.isArray((activeInvoice as any).parsedItems || JSON.parse(activeInvoice.items || '[]'))
+                      ? ((activeInvoice as any).parsedItems || JSON.parse(activeInvoice.items || '[]')).map((it: any) => ({
+                          description: it.description || 'Service',
+                          quantity: it.quantity || it.qty || 1,
+                          rate: Number(it.rate || 0),
+                          amount: Number(it.amount || 0),
+                        }))
+                      : []
+                  }
+                  subtotal={Number(activeInvoice.subtotal || 0)}
+                  discount={Number(activeInvoice.discount || 0)}
+                  taxPercent={Number(activeInvoice.taxPercent || 0)}
+                  cgstAmount={Number(activeInvoice.cgstAmount || (Number(activeInvoice.taxAmount || 0) / 2))}
+                  sgstAmount={Number(activeInvoice.sgstAmount || (Number(activeInvoice.taxAmount || 0) / 2))}
+                  grandTotal={Number(activeInvoice.grandTotal || 0)}
+                  paidAmount={Number(activeInvoice.paidAmount || 0)}
+                  balanceAmount={Number(activeInvoice.balanceAmount || 0)}
+                  notes={activeInvoice.notes || undefined}
+                  showTerms={true}
+                />
+              ) : (
+                <div className="bg-white p-6 sm:p-10 rounded-2xl border border-stone-200 text-stone-900 font-sans shadow-xs">
+                  {/* Header: Company & Title */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start pb-6 border-b-2 border-stone-800 gap-4">
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-bold text-[#8B6B23] tracking-widest uppercase">
+                        ॥ श्री गणेशाय नमः ॥
+                      </div>
+                      <BrandLogo variant="print" />
+                      <p className="text-xs text-stone-700 max-w-sm pt-1 font-medium leading-relaxed">
+                        {(activeInvoice as any).parsedSnapshot?.address || settings?.address || 'पकड़ीयावर, चन्दवाँ, आरा (बिहार)'}
+                      </p>
+                      <p className="text-xs font-bold text-stone-800">
+                        मो० नं० (Mob.) : 9431086933, 8789182989
+                      </p>
+                      <p className="text-xs font-mono font-bold text-[#14281D]">
+                        GSTIN: {(activeInvoice as any).parsedSnapshot?.gstin || settings?.gstin || '10CNXPSO100F2ZC'}
+                      </p>
+                    </div>
 
-                <div className="text-right sm:self-start">
-                  <div className="inline-block px-3 py-1 rounded bg-[#14281D] text-[#F3E7C4] text-xs font-bold uppercase tracking-widest mb-2">
-                    Tax Invoice
+                    <div className="text-right sm:self-start">
+                      <div className="inline-block px-3 py-1 rounded bg-[#14281D] text-[#F3E7C4] text-xs font-bold uppercase tracking-widest mb-2">
+                        Tax Invoice
+                      </div>
+                      <div className="text-sm font-bold font-mono text-stone-900">{activeInvoice.invoiceNumber}</div>
+                      <div className="text-xs text-stone-500 mt-1">
+                        Invoice Date: <span className="font-semibold text-stone-800">{activeInvoice.invoiceDate || activeInvoice.createdAt?.split('T')[0]}</span>
+                      </div>
+                      <div className="text-xs text-stone-500">
+                        Event Date: <span className="font-semibold text-stone-800">{activeInvoice.eventDate}</span>
+                      </div>
+                      {activeInvoice.dueDate && (
+                        <div className="text-xs text-stone-500">
+                          Payment Due: <span className="font-semibold text-stone-800">{activeInvoice.dueDate}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm font-bold font-mono text-stone-900">{activeInvoice.invoiceNumber}</div>
-                  <div className="text-xs text-stone-500 mt-1">
-                    Invoice Date: <span className="font-semibold text-stone-800">{activeInvoice.invoiceDate || activeInvoice.createdAt?.split('T')[0]}</span>
+
+                  {/* Billed To Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-b border-stone-200 text-xs">
+                    <div>
+                      <span className="font-bold text-stone-400 uppercase tracking-wider text-[10px]">
+                        Billed To (Customer):
+                      </span>
+                      <h4 className="text-sm font-bold text-stone-900 mt-0.5">
+                        {(activeInvoice as any).parsedSnapshot?.customerName || activeInvoice.customer?.name || 'Valued Guest'}
+                      </h4>
+                      <p className="text-stone-600 mt-0.5">
+                        {(activeInvoice as any).parsedSnapshot?.customerMobile || activeInvoice.customer?.mobile}
+                      </p>
+                      <p className="text-stone-500">
+                        {(activeInvoice as any).parsedSnapshot?.customerAddress || activeInvoice.customer?.address || 'Ara, Bihar'}
+                      </p>
+                      <p className="text-stone-500 font-mono text-[11px] mt-0.5">
+                        GSTIN: {(activeInvoice as any).parsedSnapshot?.customerGstin || (activeInvoice.customer as any)?.gstin || 'URP (Unregistered)'}
+                      </p>
+                    </div>
+
+                    <div className="sm:text-right">
+                      <span className="font-bold text-stone-400 uppercase tracking-wider text-[10px]">
+                        Document Status:
+                      </span>
+                      <div className="mt-1">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-md text-xs font-black uppercase tracking-wider ${
+                            activeInvoice.status === 'PAID'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : activeInvoice.status === 'PARTIAL'
+                              ? 'bg-amber-100 text-amber-800'
+                              : activeInvoice.status === 'ISSUED'
+                              ? 'bg-blue-100 text-blue-800'
+                              : activeInvoice.status === 'CANCELLED'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-stone-100 text-stone-800'
+                          }`}
+                        >
+                          {activeInvoice.status}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-stone-500">
-                    Event Date: <span className="font-semibold text-stone-800">{activeInvoice.eventDate}</span>
+
+                  {/* Line Items Table */}
+                  <div className="py-4">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b-2 border-stone-300 text-stone-600 font-bold uppercase text-[10px] tracking-wider">
+                          <th className="py-2.5 px-2">#</th>
+                          <th className="py-2.5 px-2">Particulars / Service Description</th>
+                          <th className="py-2.5 px-2 text-center">Qty</th>
+                          <th className="py-2.5 px-2 text-right">Rate (₹)</th>
+                          <th className="py-2.5 px-2 text-right">Amount (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-200">
+                        {((activeInvoice as any).parsedItems || JSON.parse(activeInvoice.items || '[]')).map((it: any, idx: number) => (
+                          <tr key={idx}>
+                            <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
+                            <td className="py-3 px-2 font-semibold text-stone-800">{it.description}</td>
+                            <td className="py-3 px-2 text-center">{it.quantity || it.qty || 1}</td>
+                            <td className="py-3 px-2 text-right font-mono">
+                              ₹{Number(it.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3 px-2 text-right font-bold font-mono text-stone-900">
+                              ₹{Number(it.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  {activeInvoice.dueDate && (
-                    <div className="text-xs text-stone-500">
-                      Payment Due: <span className="font-semibold text-stone-800">{activeInvoice.dueDate}</span>
+
+                  {/* Total Calculation & Bank Details Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 pt-4 border-t-2 border-stone-200 text-xs">
+                    {/* Bank Account Info */}
+                    <div className="sm:col-span-6 p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-1.5">
+                      <div className="font-bold text-stone-800 uppercase tracking-wider text-[10px] flex items-center space-x-1">
+                        <Building className="w-3.5 h-3.5 text-[#C5A059]" />
+                        <span>Bank Transfer Details (NEFT/RTGS)</span>
+                      </div>
+                      <div className="text-stone-700">
+                        <span className="text-stone-400">Bank:</span> {(activeInvoice as any).parsedSnapshot?.bankName || settings?.bankName || 'State Bank of India'}
+                      </div>
+                      <div className="text-stone-700">
+                        <span className="text-stone-400">Account No:</span>{' '}
+                        <span className="font-mono font-bold">{(activeInvoice as any).parsedSnapshot?.accountNumber || settings?.accountNumber || '50200012345678'}</span>
+                      </div>
+                      <div className="text-stone-700">
+                        <span className="text-stone-400">IFSC Code:</span>{' '}
+                        <span className="font-mono font-bold">{(activeInvoice as any).parsedSnapshot?.ifscCode || settings?.ifscCode || 'SBIN0001234'}</span>
+                      </div>
+                    </div>
+
+                    {/* Subtotals & Balances */}
+                    <div className="sm:col-span-6 space-y-1.5">
+                      <div className="flex justify-between text-stone-600">
+                        <span>Subtotal:</span>
+                        <span className="font-mono font-semibold">₹{Number(activeInvoice.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      {Number(activeInvoice.discount) > 0 && (
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Discount:</span>
+                          <span className="font-mono font-semibold">- ₹{Number(activeInvoice.discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-stone-600">
+                        <span>Taxable Value:</span>
+                        <span className="font-mono font-semibold">
+                          ₹{(Number(activeInvoice.subtotal) - Number(activeInvoice.discount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-stone-500 text-[11px]">
+                        <span>CGST ({(Number(activeInvoice.taxPercent) / 2).toFixed(1)}%):</span>
+                        <span className="font-mono">₹{Number(activeInvoice.cgstAmount || (Number(activeInvoice.taxAmount) / 2).toFixed(2)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-stone-500 text-[11px]">
+                        <span>SGST ({(Number(activeInvoice.taxPercent) / 2).toFixed(1)}%):</span>
+                        <span className="font-mono">₹{Number(activeInvoice.sgstAmount || (Number(activeInvoice.taxAmount) / 2).toFixed(2)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-base font-black text-[#14281D] py-2 border-y-2 border-stone-800 font-brand">
+                        <span>Grand Total:</span>
+                        <span className="font-mono">₹{Number(activeInvoice.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 font-bold">
+                        <span>Total Paid:</span>
+                        <span className="font-mono">₹{Number(activeInvoice.paidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-amber-700 font-black text-sm">
+                        <span>Balance Due:</span>
+                        <span className="font-mono">₹{Number(activeInvoice.balanceAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes & Terms */}
+                  {activeInvoice.notes && (
+                    <div className="mt-4 p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs">
+                      <p className="font-bold text-stone-600 uppercase text-[10px]">Notes:</p>
+                      <p className="text-stone-700 whitespace-pre-line mt-0.5">{activeInvoice.notes}</p>
                     </div>
                   )}
-                </div>
-              </div>
 
-              {/* Billed To Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 border-b border-stone-200 text-xs">
-                <div>
-                  <span className="font-bold text-stone-400 uppercase tracking-wider text-[10px]">
-                    Billed To (Customer):
-                  </span>
-                  <h4 className="text-sm font-bold text-stone-900 mt-0.5">
-                    {(activeInvoice as any).parsedSnapshot?.customerName || activeInvoice.customer?.name || 'Valued Guest'}
-                  </h4>
-                  <p className="text-stone-600 mt-0.5">
-                    {(activeInvoice as any).parsedSnapshot?.customerMobile || activeInvoice.customer?.mobile}
-                  </p>
-                  <p className="text-stone-500">
-                    {(activeInvoice as any).parsedSnapshot?.customerAddress || activeInvoice.customer?.address || 'Ara, Bihar'}
-                  </p>
-                  <p className="text-stone-500 font-mono text-[11px] mt-0.5">
-                    GSTIN: {(activeInvoice as any).parsedSnapshot?.customerGstin || (activeInvoice.customer as any)?.gstin || 'URP (Unregistered)'}
-                  </p>
-                </div>
-
-                <div className="sm:text-right">
-                  <span className="font-bold text-stone-400 uppercase tracking-wider text-[10px]">
-                    Document Status:
-                  </span>
-                  <div className="mt-1">
-                    <span
-                      className={`inline-flex px-3 py-1 rounded-md text-xs font-black uppercase tracking-wider ${
-                        activeInvoice.status === 'PAID'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : activeInvoice.status === 'PARTIAL'
-                          ? 'bg-amber-100 text-amber-800'
-                          : activeInvoice.status === 'ISSUED'
-                          ? 'bg-blue-100 text-blue-800'
-                          : activeInvoice.status === 'CANCELLED'
-                          ? 'bg-rose-100 text-rose-800'
-                          : 'bg-stone-100 text-stone-800'
-                      }`}
-                    >
-                      {activeInvoice.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Line Items Table */}
-              <div className="py-4">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b-2 border-stone-300 text-stone-600 font-bold uppercase text-[10px] tracking-wider">
-                      <th className="py-2.5 px-2">#</th>
-                      <th className="py-2.5 px-2">Particulars / Service Description</th>
-                      <th className="py-2.5 px-2 text-center">Qty</th>
-                      <th className="py-2.5 px-2 text-right">Rate (₹)</th>
-                      <th className="py-2.5 px-2 text-right">Amount (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-stone-200">
-                    {((activeInvoice as any).parsedItems || JSON.parse(activeInvoice.items || '[]')).map((it: any, idx: number) => (
-                      <tr key={idx}>
-                        <td className="py-3 px-2 font-mono text-stone-400">{idx + 1}</td>
-                        <td className="py-3 px-2 font-semibold text-stone-800">{it.description}</td>
-                        <td className="py-3 px-2 text-center">{it.quantity || it.qty || 1}</td>
-                        <td className="py-3 px-2 text-right font-mono">
-                          ₹{Number(it.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-2 text-right font-bold font-mono text-stone-900">
-                          ₹{Number(it.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Total Calculation & Bank Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 pt-4 border-t-2 border-stone-200 text-xs">
-                {/* Bank Account Info */}
-                <div className="sm:col-span-6 p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-1.5">
-                  <div className="font-bold text-stone-800 uppercase tracking-wider text-[10px] flex items-center space-x-1">
-                    <Building className="w-3.5 h-3.5 text-[#C5A059]" />
-                    <span>Bank Transfer Details (NEFT/RTGS)</span>
-                  </div>
-                  <div className="text-stone-700">
-                    <span className="text-stone-400">Bank:</span> {(activeInvoice as any).parsedSnapshot?.bankName || settings?.bankName || 'HDFC Bank'}
-                  </div>
-                  <div className="text-stone-700">
-                    <span className="text-stone-400">Account No:</span>{' '}
-                    <span className="font-mono font-bold">{(activeInvoice as any).parsedSnapshot?.accountNumber || settings?.accountNumber || '50200012345678'}</span>
-                  </div>
-                  <div className="text-stone-700">
-                    <span className="text-stone-400">IFSC Code:</span>{' '}
-                    <span className="font-mono font-bold">{(activeInvoice as any).parsedSnapshot?.ifscCode || settings?.ifscCode || 'HDFC0001234'}</span>
-                  </div>
-                </div>
-
-                {/* Subtotals & Balances */}
-                <div className="sm:col-span-6 space-y-1.5">
-                  <div className="flex justify-between text-stone-600">
-                    <span>Subtotal:</span>
-                    <span className="font-mono font-semibold">₹{Number(activeInvoice.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  {Number(activeInvoice.discount) > 0 && (
-                    <div className="flex justify-between text-emerald-700">
-                      <span>Discount:</span>
-                      <span className="font-mono font-semibold">- ₹{Number(activeInvoice.discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  {/* Terms & Signature */}
+                  <div className="mt-8 pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-end gap-6 text-[10px] text-stone-500">
+                    <div className="max-w-lg space-y-1.5 text-left">
+                      <p className="font-bold text-stone-800 uppercase tracking-wider text-[11px]">
+                        नियम व शर्तें (Terms & Conditions):
+                      </p>
+                      <ol className="list-decimal list-inside space-y-1 text-stone-700 text-[11px] leading-relaxed font-medium">
+                        <li>किसी कारण वश सट्टा रद्द होने पर अग्रीम राशी जब्त हो जायेगी</li>
+                        <li>उत्सव का दिनांक पुनः बदलने पर उपलब्धता देखी जायेगी</li>
+                        <li>तय कुल रकम का 30% अग्रीम के रूप में लिया जायेगा</li>
+                        <li>उत्सव की दिनांक से 5 दिन पहले कुल रकम का भुगतान करना होगा।</li>
+                        <li>उत्सव भवन के यत्र तत्र गंदगी फैलाने पर सफाई का खर्च सट्टेदार को देना होगा।</li>
+                        <li>किसी प्रकार का तोड़फोड़ या भारी नुकसान होने पर उसका वाजिब भुगतान सट्टेदार को करना होगा।</li>
+                        <li>उत्सव के दिन किसी भी विद्युत उपकरण के खराबी आने पर ठीक कराने का प्रयास किया जायेगा परन्तु नहीं होने पर उसकी जिम्मेदारी प्रबंधन पर नहीं होगी।</li>
+                      </ol>
                     </div>
-                  )}
-                  <div className="flex justify-between text-stone-600">
-                    <span>Taxable Value:</span>
-                    <span className="font-mono font-semibold">
-                      ₹{(Number(activeInvoice.subtotal) - Number(activeInvoice.discount)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
+                    <div className="text-center sm:text-right">
+                      <div className="h-10 border-b border-stone-400 w-40 mb-1" />
+                      <p className="font-bold text-stone-800">Authorized Signatory</p>
+                      <p>{settings?.businessName || 'Bandhan Vatika'}</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-stone-500 text-[11px]">
-                    <span>CGST ({(Number(activeInvoice.taxPercent) / 2).toFixed(1)}%):</span>
-                    <span className="font-mono">₹{Number(activeInvoice.cgstAmount || (Number(activeInvoice.taxAmount) / 2).toFixed(2)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between text-stone-500 text-[11px]">
-                    <span>SGST ({(Number(activeInvoice.taxPercent) / 2).toFixed(1)}%):</span>
-                    <span className="font-mono">₹{Number(activeInvoice.sgstAmount || (Number(activeInvoice.taxAmount) / 2).toFixed(2)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between text-base font-black text-[#14281D] py-2 border-y-2 border-stone-800 font-brand">
-                    <span>Grand Total:</span>
-                    <span className="font-mono">₹{Number(activeInvoice.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-700 font-bold">
-                    <span>Total Paid:</span>
-                    <span className="font-mono">₹{Number(activeInvoice.paidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div className="flex justify-between text-amber-700 font-black text-sm">
-                    <span>Balance Due:</span>
-                    <span className="font-mono">₹{Number(activeInvoice.balanceAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notes & Terms */}
-              {activeInvoice.notes && (
-                <div className="mt-4 p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs">
-                  <p className="font-bold text-stone-600 uppercase text-[10px]">Notes:</p>
-                  <p className="text-stone-700 whitespace-pre-line mt-0.5">{activeInvoice.notes}</p>
                 </div>
               )}
-
-              {/* Terms & Signature */}
-              <div className="mt-8 pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-end gap-6 text-[10px] text-stone-500">
-                <div className="max-w-lg space-y-1.5 text-left">
-                  <p className="font-bold text-stone-800 uppercase tracking-wider text-[11px]">
-                    नियम व शर्तें (Terms & Conditions):
-                  </p>
-                  <ol className="list-decimal list-inside space-y-1 text-stone-700 text-[11px] leading-relaxed font-medium">
-                    <li>निश्चित समय या दिन पर उत्सव भवन की आवश्यकता न रहने पर एडवांस वापस नहीं होगा।</li>
-                    <li>तय सट्टा का एक तिहाई (1/3) एडवांस देय होगा।</li>
-                    <li>उत्सव भवन में साफ-सफाई एवं सामान के टूटने-फूटने की जिम्मेवारी ग्राहक की होगी।</li>
-                    <li>इन्ट्री से 5 दिन पहले पूरी रकम चुकता करना अनिवार्य है।</li>
-                    <li>सभी तरह की गाड़ियां भाड़े पर उचित मूल्य पर उपलब्ध हैं।</li>
-                  </ol>
-                </div>
-                <div className="text-center sm:text-right">
-                  <div className="h-10 border-b border-stone-400 w-40 mb-1" />
-                  <p className="font-bold text-stone-800">Authorized Signatory</p>
-                  <p>{settings?.businessName || 'Bandhan Vatika'}</p>
-                </div>
-              </div>
             </div>
 
             {/* Print & Action Buttons */}
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
-              {Number(activeInvoice.paidAmount) > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-200">
+              <div className="text-xs text-stone-500">
+                Current Print Format: <strong className="text-stone-800">{billFormat === 'RED_BOOKLET' ? '🔴 Official Bandhan Vatika Booklet Bill' : '📄 Standard Tax Invoice'}</strong>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {Number(activeInvoice.paidAmount) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handlePrintReceipt(activeInvoice)}
+                    className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-[#F3E7C4] text-xs font-bold transition-all shadow-md"
+                    title="Print Payment Receipt Voucher (A4)"
+                  >
+                    <ReceiptText className="w-4 h-4 text-[#C5A059]" />
+                    <span>Print Payment Receipt</span>
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => handlePrintReceipt(activeInvoice)}
-                  className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-[#F3E7C4] text-xs font-bold transition-all shadow-md"
-                  title="Print Payment Receipt Voucher (A4)"
+                  onClick={handlePrint}
+                  className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md ${
+                    billFormat === 'RED_BOOKLET'
+                      ? 'bg-[#B91C1C] hover:bg-[#991B1B] text-white'
+                      : 'bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4]'
+                  }`}
                 >
-                  <ReceiptText className="w-4 h-4 text-[#C5A059]" />
-                  <span>Print Payment Receipt</span>
+                  <Printer className="w-4 h-4" />
+                  <span>Print {billFormat === 'RED_BOOKLET' ? 'Official Bill' : 'Tax Invoice'}</span>
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={handlePrint}
-                className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold transition-all shadow-md"
-              >
-                <Printer className="w-4 h-4 text-[#C5A059]" />
-                <span>Print Tax Invoice</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveInvoice(null)}
-                className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-800"
-              >
-                Close
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveInvoice(null)}
+                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-stone-800"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </Modal>
@@ -749,6 +862,21 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
               </div>
             ) : (
               <div className="space-y-4">
+                {/* 1-Click Jeevika Preset Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-red-50/80 border border-red-200 rounded-xl gap-2">
+                  <div className="text-xs text-[#B91C1C]">
+                    ⚡ <strong>Jeevika Training Event?</strong> Hall is free (₹0), billed per food plate with 5% GST.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleApplyJeevikaTemplate}
+                    className="px-3 py-1.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white rounded-lg text-xs font-bold shadow-xs flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+                  >
+                    <span>🍽️</span>
+                    <span>1-Click Fill Jeevika Food Bill</span>
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Customer</label>
@@ -853,7 +981,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Discount (₹)</label>
                     <input
@@ -863,6 +991,20 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                       onChange={(e) => setDiscount(Number(e.target.value))}
                       className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 uppercase mb-1">GST Tax Rate</label>
+                    <select
+                      value={taxPercent}
+                      onChange={(e) => setTaxPercent(Number(e.target.value))}
+                      className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold outline-none"
+                    >
+                      <option value={5}>5% (Food &amp; Catering - e.g. Jeevika)</option>
+                      <option value={18}>18% (Standard Banquet &amp; Rooms)</option>
+                      <option value={12}>12% (Hotel Stay)</option>
+                      <option value={0}>0% (Tax Exempt / Non-GST)</option>
+                    </select>
                   </div>
 
                   <div>

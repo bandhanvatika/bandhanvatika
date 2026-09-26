@@ -11,22 +11,22 @@ export async function seedDatabase() {
         id: 'default',
         businessName: 'Bandhan Vatika',
         tagline: 'A Complete Venue for Your Celebration',
-        address: 'Ara-Buxar Main Road, Bihar',
-        phone: '9876543210',
+        address: 'Pakariyabar, Chandwa, Ara (Bihar)',
+        phone: '9431086933, 8789182989',
         email: 'contact@bandhanvatika.com',
-        gstin: '10AAAAA0000A1Z5',
-        defaultTaxPercent: '18.00',
+        gstin: '10CNXPSO100F2ZC',
+        defaultTaxPercent: '5.00',
         bankName: 'State Bank of India',
         accountNumber: '50200012345678',
         ifscCode: 'SBIN0001234',
-        termsAndConditions: '1. A Complete Venue for Your Celebration — Everything you need under one roof, from the ceremony to the stay.\n2. Capacity up to 400 guests across 4 banquet halls (3 AC, 1 Non-AC).\n3. Bandhan Vatika stage setup area, catering & decoration available.\n4. 10 guest rooms (6 AC, 4 Non-AC) with parking support on Ara-Buxar Main Road.',
+        termsAndConditions: '1. किसी कारण वश सट्टा रद्द होने पर अग्रीम राशी जब्त हो जायेगी\n2. उत्सव का दिनांक पुनः बदलने पर उपलब्धता देखी जायेगी\n3. तय कुल रकम का 30% अग्रीम के रूप में लिया जायेगा\n4. उत्सव की दिनांक से 5 दिन पहले कुल रकम का भुगतान करना होगा।\n5. उत्सव भवन के यत्र तत्र गंदगी फैलाने पर सफाई का खर्च सट्टेदार को देना होगा।\n6. किसी प्रकार का तोड़फोड़ या भारी नुकसान होने पर उसका वाजिब भुगतान सट्टेदार को करना होगा।\n7. उत्सव के दिन किसी भी विद्युत उपकरण के खराबी आने पर ठीक कराने का प्रयास किया जायेगा परन्तु नहीं होने पर उसकी जिम्मेदारी प्रबंधन पर नहीं होगी।',
       });
     }
 
     // 2. Default Administrative and Staff User Accounts
     const existingUsers = await db.select().from(users);
     if (existingUsers.length === 0) {
-      const passwordHash = await bcrypt.hash('kshitiz@473', 10);
+      const passwordHash = await bcrypt.hash('SRKP@1977', 10);
       const managerHash = await bcrypt.hash('manager123', 10);
       const acctHash = await bcrypt.hash('accountant123', 10);
       const recepHash = await bcrypt.hash('reception123', 10);

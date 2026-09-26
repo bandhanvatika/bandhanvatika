@@ -100,7 +100,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const [newServiceQty, setNewServiceQty] = useState('1');
   const [newServiceRate, setNewServiceRate] = useState('');
   const [discount, setDiscount] = useState<number>(0);
-  const [taxPercent, setTaxPercent] = useState<number>(18);
+  const [waiveHallFee, setWaiveHallFee] = useState<boolean>(false);
+  const [taxPercent, setTaxPercent] = useState<number>(5);
   const [advancePayment, setAdvancePayment] = useState<number>(50000);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER'>('UPI');
   const [notes, setNotes] = useState('');
@@ -217,7 +218,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
 
   // Calculations for Step 4
   const selectedHall = hallsList.find((h) => h.id === selectedHallId);
-  const hallCost = selectedHall ? Number(selectedHall.basePrice) : 0;
+  const hallCost = waiveHallFee ? 0 : (selectedHall ? Number(selectedHall.basePrice) : 0);
 
   const roomNights = useMemo(() => {
     if (!checkInDate || !checkOutDate) return 1;
@@ -402,6 +403,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
         endTime,
         guestCount,
         hallId: selectedHallId,
+        waiveHallFee,
+        taxPercent,
         roomIds: selectedRoomIds,
         checkInDate: selectedRoomIds.length > 0 ? checkInDate : undefined,
         checkOutDate: selectedRoomIds.length > 0 ? checkOutDate : undefined,
@@ -756,7 +759,15 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
               </label>
               <select
                 value={eventType}
-                onChange={(e) => setEventType(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEventType(val);
+                  if (val.toLowerCase().includes('jeevika')) {
+                    setWaiveHallFee(true);
+                    setTaxPercent(5);
+                    setAdvancePayment(0);
+                  }
+                }}
                 className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold focus:border-[#C5A059] outline-none"
               >
                 <option value="Wedding">Wedding (Vivah Sanskar)</option>
@@ -766,6 +777,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 <option value="Birthday">Birthday Celebration</option>
                 <option value="Anniversary">Anniversary</option>
                 <option value="Corporate">Corporate Conference / Seminar</option>
+                <option value="Jeevika Training">Jeevika Training / Workshop (Free Hall, 5% Food GST)</option>
                 <option value="Other">Other Private Function</option>
               </select>
             </div>
@@ -975,9 +987,33 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
               <label className="text-xs font-bold text-stone-700 uppercase tracking-wider">
                 Itemized Services & Add-ons
               </label>
-              <span className="text-xs font-bold text-stone-900">
-                Total Services: ₹{servicesCost.toLocaleString('en-IN')}
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const qty = guestCount > 0 ? guestCount : 70;
+                    const rate = 514.29;
+                    const amount = Math.round(qty * rate);
+                    setServices((prev) => [
+                      ...prev,
+                      {
+                        id: String(Date.now()),
+                        name: `Jeevika Food Charges (${qty} Plates: Breakfast + Lunch + Dinner)`,
+                        quantity: qty,
+                        rate,
+                        amount,
+                      },
+                    ]);
+                  }}
+                  className="text-[11px] px-2.5 py-1 bg-red-50 text-[#B91C1C] border border-red-200 rounded-lg hover:bg-red-100 font-bold flex items-center gap-1"
+                >
+                  <span>🍽️</span>
+                  <span>+ Quick Add Jeevika Food Plates</span>
+                </button>
+                <span className="text-xs font-bold text-stone-900">
+                  Total Services: ₹{servicesCost.toLocaleString('en-IN')}
+                </span>
+              </div>
             </div>
 
             <div className="space-y-2 mb-3 max-h-40 overflow-y-auto">
@@ -1041,6 +1077,27 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             </div>
           </div>
 
+          {/* Complimentary / Waive Hall Fee Checkbox */}
+          <div className="flex items-center justify-between p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="waiveHallFee"
+                checked={waiveHallFee}
+                onChange={(e) => setWaiveHallFee(e.target.checked)}
+                className="rounded text-[#B91C1C] w-4 h-4 cursor-pointer"
+              />
+              <label htmlFor="waiveHallFee" className="font-bold text-stone-800 cursor-pointer">
+                Complimentary / Free Hall (₹0 Hall Charge for Jeevika / NGO Training)
+              </label>
+            </div>
+            {waiveHallFee && (
+              <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
+                Hall Fee ₹0 Applied (Only Food Charged)
+              </span>
+            )}
+          </div>
+
           {/* Pricing Adjustments */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-stone-200">
             <div>
@@ -1055,12 +1112,16 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             </div>
             <div>
               <label className="block text-[11px] font-bold text-stone-600 uppercase mb-1">GST Tax (%)</label>
-              <input
-                type="number"
-                disabled
+              <select
                 value={taxPercent}
-                className="w-full p-2 bg-stone-100 border border-stone-200 rounded-xl text-xs font-bold text-stone-500 cursor-not-allowed"
-              />
+                onChange={(e) => setTaxPercent(Number(e.target.value))}
+                className="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold outline-none"
+              >
+                <option value={5}>5% (Food &amp; Catering - e.g. Jeevika)</option>
+                <option value={18}>18% (Standard Banquet &amp; Rooms)</option>
+                <option value={12}>12% (Hotel Stay)</option>
+                <option value={0}>0% (Tax Exempt)</option>
+              </select>
             </div>
             <div>
               <label className="block text-[11px] font-bold text-stone-600 uppercase mb-1">Advance (₹)</label>

@@ -1375,11 +1375,13 @@ const ALLOWED_STATUS_TRANSITIONS: Record<string, string[]> = {
   CANCELLED: [],
 };
 
-export const BANDHAN_VATIKA_TERMS = `1. निश्चित समय या दिन पर उत्सव भवन की आवश्यकता न रहने पर एडवांस वापस नहीं होगा।
-2. तय सट्टा का एक तिहाई (1/3) एडवांस देय होगा।
-3. उत्सव भवन में साफ-सफाई एवं सामान के टूटने-फूटने की जिम्मेवारी ग्राहक की होगी।
-4. इन्ट्री से 5 दिन पहले पूरी रकम चुकता करना अनिवार्य है।
-5. सभी तरह की गाड़ियां भाड़े पर उचित मूल्य पर उपलब्ध हैं।`;
+export const BANDHAN_VATIKA_TERMS = `1. किसी कारण वश सट्टा रद्द होने पर अग्रीम राशी जब्त हो जायेगी
+2. उत्सव का दिनांक पुनः बदलने पर उपलब्धता देखी जायेगी
+3. तय कुल रकम का 30% अग्रीम के रूप में लिया जायेगा
+4. उत्सव की दिनांक से 5 दिन पहले कुल रकम का भुगतान करना होगा।
+5. उत्सव भवन के यत्र तत्र गंदगी फैलाने पर सफाई का खर्च सट्टेदार को देना होगा।
+6. किसी प्रकार का तोड़फोड़ या भारी नुकसान होने पर उसका वाजिब भुगतान सट्टेदार को करना होगा।
+7. उत्सव के दिन किसी भी विद्युत उपकरण के खराबी आने पर ठीक कराने का प्रयास किया जायेगा परन्तु नहीं होने पर उसकी जिम्मेदारी प्रबंधन पर नहीं होगी।`;
 
 // GET /api/v1/bookings — List bookings with search, status, hall, customer, date filters and pagination
 app.get('/api/v1/bookings', authenticate, async (req: AuthenticatedRequest, res: Response) => {
@@ -1768,10 +1770,13 @@ app.post('/api/v1/bookings', authenticate, requireRoles(['OWNER', 'MANAGER', 'RE
 
       // Hall rental item
       if (selectedHall) {
+        const isFreeHall = req.body.waiveHallFee === true || req.body.hallPrice === 0 || (typeof eventType === 'string' && eventType.toLowerCase().includes('jeevika'));
         financialItems.push({
-          description: `Venue Rental (${selectedHall.name})`,
+          description: isFreeHall
+            ? `Venue Allocated (${selectedHall.name} - Free / Complimentary)`
+            : `Venue Rental (${selectedHall.name})`,
           qty: 1,
-          rate: Number(selectedHall.basePrice),
+          rate: isFreeHall ? 0 : Number(selectedHall.basePrice),
         });
       }
 
@@ -1809,9 +1814,12 @@ app.post('/api/v1/bookings', authenticate, requireRoles(['OWNER', 'MANAGER', 'RE
         }
       }
 
-      // Retrieve default GST tax rate from settings
+      // Retrieve default GST tax rate from settings (supports 5% food GST or custom)
       const [settingRow] = await tx.select().from(settings).where(eq(settings.id, 'default'));
-      const taxPercent = settingRow ? Number(settingRow.defaultTaxPercent) : 18.0;
+      const defaultTax = settingRow ? Number(settingRow.defaultTaxPercent) : 5.0;
+      const taxPercent = req.body.taxPercent !== undefined && !isNaN(Number(req.body.taxPercent))
+        ? Math.max(0, Number(req.body.taxPercent))
+        : (typeof eventType === 'string' && eventType.toLowerCase().includes('jeevika') ? 5.0 : defaultTax);
 
       // Validate discount
       const rawDiscount = Math.max(0, Number(discount) || 0);
@@ -3899,9 +3907,12 @@ app.post('/api/v1/invoices', authenticate, requireRoles(['OWNER', 'MANAGER', 'AC
         }
       }
 
-      // 5.4 Fetch authoritative tax rate from Settings
+      // 5.4 Fetch authoritative tax rate from Settings (or override from request body e.g. 5% food GST)
       const [settingRow] = await tx.select().from(settings).where(eq(settings.id, 'default'));
-      const taxPercent = settingRow ? Number(settingRow.defaultTaxPercent) : 18.0;
+      const defaultTax = settingRow ? Number(settingRow.defaultTaxPercent) : 5.0;
+      const taxPercent = req.body.taxPercent !== undefined && !isNaN(Number(req.body.taxPercent))
+        ? Math.max(0, Number(req.body.taxPercent))
+        : defaultTax;
 
       // 5.5 Financial Calculation
       const financialItems = itemsCheck.items!.map((it) => ({

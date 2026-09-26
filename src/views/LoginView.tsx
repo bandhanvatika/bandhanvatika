@@ -21,11 +21,7 @@ export const LoginView: React.FC = () => {
     }
   };
 
-  const setDemoAccount = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setError(null);
-  };
+
 
   return (
     <div className="min-h-screen bg-[#F7F4EE] flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -172,58 +168,6 @@ export const LoginView: React.FC = () => {
             </form>
           </div>
 
-          {/* Quick Demo Switcher for fast evaluation */}
-          <div className="mt-8 pt-6 border-t border-stone-100">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2.5">
-              Quick Demo Accounts (1-Click Fill)
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setDemoAccount('admin', 'admin123')}
-                className="px-2.5 py-1.5 text-left rounded-lg bg-stone-50 hover:bg-[#14281D]/5 border border-stone-200 text-stone-700 transition-colors"
-              >
-                <div className="text-xs font-bold text-stone-900">Owner</div>
-                <div className="text-[10px] text-stone-500">Full Access</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDemoAccount('manager', 'manager123')}
-                className="px-2.5 py-1.5 text-left rounded-lg bg-stone-50 hover:bg-[#14281D]/5 border border-stone-200 text-stone-700 transition-colors"
-              >
-                <div className="text-xs font-bold text-stone-900">Manager</div>
-                <div className="text-[10px] text-stone-500">Bookings & Ops</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDemoAccount('accountant', 'accountant123')}
-                className="px-2.5 py-1.5 text-left rounded-lg bg-stone-50 hover:bg-[#14281D]/5 border border-stone-200 text-stone-700 transition-colors"
-              >
-                <div className="text-xs font-bold text-stone-900">Accountant</div>
-                <div className="text-[10px] text-stone-500">Billing & P&L</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDemoAccount('reception', 'reception123')}
-                className="px-2.5 py-1.5 text-left rounded-lg bg-stone-50 hover:bg-[#14281D]/5 border border-stone-200 text-stone-700 transition-colors"
-              >
-                <div className="text-xs font-bold text-stone-900">Receptionist</div>
-                <div className="text-[10px] text-stone-500">Desk & Check-in</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDemoAccount('staff', 'staff123')}
-                className="px-2.5 py-1.5 text-left rounded-lg bg-stone-50 hover:bg-[#14281D]/5 border border-stone-200 text-stone-700 transition-colors"
-              >
-                <div className="text-xs font-bold text-stone-900">Staff</div>
-                <div className="text-[10px] text-stone-500">Schedule View</div>
-              </button>
-            </div>
-          </div>
         </div>
 
       </div>
