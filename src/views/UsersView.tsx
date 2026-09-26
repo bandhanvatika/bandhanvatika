@@ -15,6 +15,8 @@ export const UsersView: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [idProofType, setIdProofType] = useState('Aadhaar Card');
+  const [idProofNumber, setIdProofNumber] = useState('');
   const [role, setRole] = useState<UserRole>('STAFF');
   const [saving, setSaving] = useState(false);
 
@@ -25,6 +27,8 @@ export const UsersView: React.FC = () => {
   const [editRole, setEditRole] = useState<UserRole>('STAFF');
   const [editStatus, setEditStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
   const [editPhone, setEditPhone] = useState('');
+  const [editIdProofType, setEditIdProofType] = useState('Aadhaar Card');
+  const [editIdProofNumber, setEditIdProofNumber] = useState('');
   const [updating, setUpdating] = useState(false);
 
   const fetchUsers = async () => {
@@ -43,7 +47,7 @@ export const UsersView: React.FC = () => {
     setSaving(true);
     const res = await apiRequest('/users', {
       method: 'POST',
-      body: JSON.stringify({ username, password, name, email, phone, role }),
+      body: JSON.stringify({ username, password, name, email, phone, role, idProofType, idProofNumber }),
     });
     setSaving(false);
     if (res.success) {
@@ -53,6 +57,8 @@ export const UsersView: React.FC = () => {
       setName('');
       setEmail('');
       setPhone('');
+      setIdProofType('Aadhaar Card');
+      setIdProofNumber('');
       fetchUsers();
     } else {
       alert(res.error?.message || 'Failed to create staff account');
@@ -65,6 +71,8 @@ export const UsersView: React.FC = () => {
     setEditRole(u.role);
     setEditStatus(u.status as 'ACTIVE' | 'INACTIVE');
     setEditPhone(u.phone || '');
+    setEditIdProofType(u.idProofType || 'Aadhaar Card');
+    setEditIdProofNumber(u.idProofNumber || '');
     setShowEdit(true);
   };
 
@@ -79,6 +87,8 @@ export const UsersView: React.FC = () => {
         role: editRole,
         status: editStatus,
         phone: editPhone,
+        idProofType: editIdProofType,
+        idProofNumber: editIdProofNumber,
       }),
     });
     setUpdating(false);
@@ -160,8 +170,17 @@ export const UsersView: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-3 text-stone-600">
-                      <div>{u.email}</div>
+                      <div className="font-medium text-stone-800">{u.email}</div>
                       <div className="text-[11px] text-stone-400">{u.phone || '—'}</div>
+                      {u.idProofType && u.idProofNumber ? (
+                        <div className="mt-1 inline-flex items-center text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-emerald-200/60">
+                          ✓ {u.idProofType}: {u.idProofNumber}
+                        </div>
+                      ) : (
+                        <div className="mt-1 inline-flex items-center text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-medium border border-amber-200/60">
+                          ID Pending
+                        </div>
+                      )}
                     </td>
                     <td className="py-3.5 px-3 text-center">
                       <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
@@ -277,13 +296,41 @@ export const UsersView: React.FC = () => {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Email *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="vikas@bandhanvatika.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Govt ID Type</label>
+                <select
+                  value={idProofType}
+                  onChange={(e) => setIdProofType(e.target.value)}
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold outline-none"
+                >
+                  <option value="Aadhaar Card">Aadhaar Card (UIDAI)</option>
+                  <option value="PAN Card">PAN Card</option>
+                  <option value="Voter ID">Voter ID</option>
+                  <option value="Driving License">Driving License</option>
+                </select>
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Email</label>
+              <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Govt ID / Aadhaar Number</label>
               <input
-                type="email"
-                placeholder="vikas@bandhanvatika.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                placeholder="e.g. 1234 5678 9012"
+                value={idProofNumber}
+                onChange={(e) => setIdProofNumber(e.target.value)}
                 className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none"
               />
             </div>
@@ -361,13 +408,40 @@ export const UsersView: React.FC = () => {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Phone</label>
+                <input
+                  type="tel"
+                  placeholder="9876543210"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Govt ID Type</label>
+                <select
+                  value={editIdProofType}
+                  onChange={(e) => setEditIdProofType(e.target.value)}
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold outline-none"
+                >
+                  <option value="Aadhaar Card">Aadhaar Card (UIDAI)</option>
+                  <option value="PAN Card">PAN Card</option>
+                  <option value="Voter ID">Voter ID</option>
+                  <option value="Driving License">Driving License</option>
+                </select>
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Phone</label>
+              <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Govt ID / Aadhaar Number</label>
               <input
-                type="tel"
-                placeholder="9876543210"
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
+                type="text"
+                placeholder="e.g. 1234 5678 9012"
+                value={editIdProofNumber}
+                onChange={(e) => setEditIdProofNumber(e.target.value)}
                 className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none"
               />
             </div>

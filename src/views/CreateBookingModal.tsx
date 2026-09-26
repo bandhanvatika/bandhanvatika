@@ -60,6 +60,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const [newCustEmail, setNewCustEmail] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
   const [newCustCity, setNewCustCity] = useState('Indore');
+  const [newCustIdProofType, setNewCustIdProofType] = useState('Aadhaar Card');
+  const [newCustIdProofNumber, setNewCustIdProofNumber] = useState('');
   const [mobileConflictWarning, setMobileConflictWarning] = useState<string | null>(null);
 
   // Step 2: Event Details (Asia/Kolkata Business Context)
@@ -372,6 +374,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           email: newCustEmail.trim() || undefined,
           address: newCustAddress.trim() || undefined,
           city: newCustCity.trim() || 'Indore',
+          idProofType: newCustIdProofType || undefined,
+          idProofNumber: newCustIdProofNumber.trim() || undefined,
         }),
       });
       if (!cRes.success || !cRes.data) {
@@ -539,8 +543,17 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                       >
                         <div>
                           <div className="font-bold text-xs text-stone-900">{c.name}</div>
-                          <div className="text-[11px] text-stone-500">
-                            {c.mobile} · {c.city || 'Indore'}
+                          <div className="text-[11px] text-stone-500 flex flex-wrap items-center gap-1.5 mt-0.5">
+                            <span>{c.mobile} · {c.city || 'Indore'}</span>
+                            {c.idProofType && c.idProofNumber ? (
+                              <span className="inline-flex items-center text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-emerald-200/60">
+                                ✓ {c.idProofType}: {c.idProofNumber}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-medium border border-amber-200/60">
+                                ID Pending
+                              </span>
+                            )}
                           </div>
                         </div>
                         {isSelected && <Check className="w-4 h-4 text-[#C5A059]" />}
@@ -622,6 +635,36 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                   placeholder="MG Road, Indore"
                   value={newCustAddress}
                   onChange={(e) => setNewCustAddress(e.target.value)}
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                  Govt ID Proof Type
+                </label>
+                <select
+                  value={newCustIdProofType}
+                  onChange={(e) => setNewCustIdProofType(e.target.value)}
+                  className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold focus:border-[#C5A059] outline-none"
+                >
+                  <option value="Aadhaar Card">Aadhaar Card (UIDAI)</option>
+                  <option value="PAN Card">PAN Card</option>
+                  <option value="Voter ID">Voter ID (Election Card)</option>
+                  <option value="Driving License">Driving License</option>
+                  <option value="Passport">Passport</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                  Govt ID Number (e.g. 12-digit Aadhaar)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1234 5678 9012"
+                  value={newCustIdProofNumber}
+                  onChange={(e) => setNewCustIdProofNumber(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059]"
                 />
               </div>

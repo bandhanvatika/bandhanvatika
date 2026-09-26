@@ -7,6 +7,8 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   phone: varchar('phone', { length: 50 }),
+  idProofType: varchar('id_proof_type', { length: 50 }),
+  idProofNumber: varchar('id_proof_number', { length: 100 }),
   role: varchar('role', { length: 50 }).notNull().default('STAFF'), // OWNER, MANAGER, ACCOUNTANT, RECEPTIONIST, STAFF
   status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, INACTIVE
   lastLoginAt: timestamp('last_login_at'),

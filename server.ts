@@ -5373,6 +5373,8 @@ app.get('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Auth
         username: users.username,
         name: users.name,
         phone: users.phone,
+        idProofType: users.idProofType,
+        idProofNumber: users.idProofNumber,
         role: users.role,
         status: users.status,
         lastLoginAt: users.lastLoginAt,
@@ -5388,7 +5390,7 @@ app.get('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Auth
 
 app.post('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, email, username, password, role, phone } = req.body;
+    const { name, email, username, password, role, phone, idProofType, idProofNumber } = req.body;
     if (!name || !email || !username || !password || !role) {
       return res.status(400).json({
         success: false,
@@ -5423,6 +5425,8 @@ app.post('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Aut
         passwordHash,
         name: name.trim(),
         phone: phone ? phone.trim() : null,
+        idProofType: idProofType ? idProofType.trim() : null,
+        idProofNumber: idProofNumber ? idProofNumber.trim() : null,
         role,
         status: 'ACTIVE',
       })
@@ -5432,6 +5436,9 @@ app.post('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Aut
         username: users.username,
         name: users.name,
         role: users.role,
+        phone: users.phone,
+        idProofType: users.idProofType,
+        idProofNumber: users.idProofNumber,
         status: users.status,
       });
 
@@ -5453,7 +5460,7 @@ app.post('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Aut
 
 app.put('/api/v1/users/:id', authenticate, requireRoles(['OWNER']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, role, status, phone } = req.body;
+    const { name, role, status, phone, idProofType, idProofNumber } = req.body;
     const [updated] = await db
       .update(users)
       .set({
@@ -5461,6 +5468,8 @@ app.put('/api/v1/users/:id', authenticate, requireRoles(['OWNER']), async (req: 
         role,
         status,
         phone,
+        idProofType: idProofType !== undefined ? (idProofType ? idProofType.trim() : null) : undefined,
+        idProofNumber: idProofNumber !== undefined ? (idProofNumber ? idProofNumber.trim() : null) : undefined,
         updatedAt: new Date(),
       })
       .where(eq(users.id, req.params.id))
@@ -5470,6 +5479,9 @@ app.put('/api/v1/users/:id', authenticate, requireRoles(['OWNER']), async (req: 
         username: users.username,
         name: users.name,
         role: users.role,
+        phone: users.phone,
+        idProofType: users.idProofType,
+        idProofNumber: users.idProofNumber,
         status: users.status,
       });
 

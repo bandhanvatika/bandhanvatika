@@ -7,6 +7,8 @@ export interface User {
   name: string;
   role: UserRole;
   phone?: string | null;
+  idProofType?: string | null;
+  idProofNumber?: string | null;
   status: 'ACTIVE' | 'INACTIVE';
   lastLoginAt?: string | null;
 }
