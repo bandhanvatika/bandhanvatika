@@ -165,7 +165,7 @@ export const LoginView: React.FC = () => {
               <div>
                 <label className="block text-[11px] font-bold text-stone-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                   <span>Username or Email</span>
-                  <span className="text-[10px] font-normal text-stone-400 capitalize">e.g. admin</span>
+                  <span className="text-[10px] font-normal text-stone-400">admin / rinki_sanjay_sinha</span>
                 </label>
                 <div className="relative group">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8B6B23] transition-colors group-focus-within:text-[#14281D]">
@@ -177,7 +177,7 @@ export const LoginView: React.FC = () => {
                     autoComplete="off"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your username or email"
+                    placeholder="admin or rinki_sanjay_sinha"
                     className="w-full pl-10 pr-4 py-3 bg-[#FAF8F5] hover:bg-[#F7F4EE] focus:bg-white border border-[#E3DACB] focus:border-[#C5A059] focus:ring-4 focus:ring-[#C5A059]/15 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all shadow-xs"
                   />
                 </div>

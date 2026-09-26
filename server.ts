@@ -106,7 +106,19 @@ app.post('/api/v1/auth/login', async (req: Request, res: Response) => {
     }
 
     const trimmed = String(username).trim();
-    const isAdminAlias = trimmed.toLowerCase() === 'admin';
+    const lower = trimmed.toLowerCase();
+    const isOwnerAlias = [
+      'admin',
+      'owner',
+      'rinki_sanjay_sinha',
+      'rinki',
+      'sanjay',
+      'rinkisanjaysinha',
+      'rinki_sinha',
+      'sanjay_sinha',
+      'admin@bandhanvatika.com',
+    ].includes(lower);
+
     const [user] = await db
       .select()
       .from(users)
@@ -114,7 +126,7 @@ app.post('/api/v1/auth/login', async (req: Request, res: Response) => {
         or(
           ilike(users.username, trimmed),
           ilike(users.email, trimmed),
-          isAdminAlias ? eq(users.role, 'OWNER') : sql`FALSE`
+          isOwnerAlias ? eq(users.role, 'OWNER') : sql`FALSE`
         )
       );
 
