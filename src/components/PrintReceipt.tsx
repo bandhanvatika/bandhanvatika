@@ -1,6 +1,7 @@
 import React from 'react';
 import { Customer, Booking, Payment, Settings, Invoice } from '../types/index.ts';
 import { BrandLogo } from './BrandLogo.tsx';
+import { OfficialBillSlip, OfficialBillItem } from './OfficialBillSlip.tsx';
 
 export interface PrintReceiptData {
   receiptNumber: string;
@@ -62,6 +63,11 @@ export interface PrintReceiptProps {
    * If false (default), it is hidden on screen and only rendered when printing.
    */
   showPreviewInUI?: boolean;
+
+  /**
+   * Initial selected format: 'RED_BOOKLET' (default) or 'STANDARD_RECEIPT'
+   */
+  initialFormat?: 'RED_BOOKLET' | 'STANDARD_RECEIPT';
 }
 
 /**
@@ -134,7 +140,10 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
   settings: propSettings,
   data: propData,
   showPreviewInUI = false,
+  initialFormat = 'RED_BOOKLET',
 }) => {
+  const [format, setFormat] = React.useState<'RED_BOOKLET' | 'STANDARD_RECEIPT'>(initialFormat);
+
   // Resolve effective entities from direct props or data bundle
   const booking = propBooking || propData?.booking || null;
   const invoice = propInvoice || propData?.invoice || null;
@@ -167,7 +176,7 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
     address: settings?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)',
     phone: settings?.phone || '9431086933, 8409480911, 9015755799',
     email: settings?.email || 'contact@bandhanvatika.com',
-    gstin: settings?.gstin || '23AAAAA0000A1Z5',
+    gstin: settings?.gstin || '10CNXPSO100F2ZC',
     bankName: settings?.bankName || 'HDFC Bank',
     accountNumber: settings?.accountNumber || '50200012345678',
     ifscCode: settings?.ifscCode || 'HDFC0001234',
@@ -202,42 +211,161 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
 
   const outstandingBalance = Math.max(0, grandTotal - totalPaidToDate);
 
-  return (
-    <div
-      id="bandhan-print-receipt"
-      className={`print-receipt-container font-sans bg-white text-stone-900 ${
-        showPreviewInUI ? 'block' : 'hidden print:block'
-      }`}
-      style={{
-        width: '100%',
-        maxWidth: '210mm',
-        margin: '0 auto',
-      }}
-    >
-      <style>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 10mm;
-          }
-          body {
-            background: white !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-receipt-container {
-            display: block !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-        }
-      `}</style>
+  // Build items for the official red booklet bill slip
+  let billSlipItems: OfficialBillItem[] = [];
 
-      <div className="p-8 sm:p-10 border border-stone-300 print:border-none print:p-0 space-y-5">
+  // 1. Check if invoice items exist
+  if (invoice?.items) {
+    try {
+      const parsed = typeof invoice.items === 'string' ? JSON.parse(invoice.items) : invoice.items;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        billSlipItems = parsed.map((it: any) => ({
+          description: it.description || 'Banquet & Food Service',
+          quantity: it.quantity || it.qty || 1,
+          rate: Number(it.rate || it.amount || 0),
+          amount: Number(it.amount || 0),
+        }));
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // 2. If no invoice items, extract from booking
+  if (billSlipItems.length === 0 && booking) {
+    if (booking.hallRentalPrice && Number(booking.hallRentalPrice) > 0) {
+      billSlipItems.push({
+        description: `Banquet Hall (${booking.hall?.name || 'Grand Hall'}) - ${booking.eventType || 'Celebration'}`,
+        rate: Number(booking.hallRentalPrice),
+        amount: Number(booking.hallRentalPrice),
+      });
+    }
+
+    if (booking.guestCount && Number(booking.guestCount) > 0 && Number(booking.platePrice) > 0) {
+      const foodAmt = Number(booking.guestCount) * Number(booking.platePrice);
+      billSlipItems.push({
+        description: `Food Catering (${booking.guestCount} Persons @ ₹${Number(booking.platePrice).toLocaleString('en-IN')}/plate)`,
+        quantity: Number(booking.guestCount),
+        rate: Number(booking.platePrice),
+        amount: foodAmt,
+      });
+    }
+
+    if (booking.extraServicesPrice && Number(booking.extraServicesPrice) > 0) {
+      billSlipItems.push({
+        description: 'Decoration & Stage Setup Facilities',
+        rate: Number(booking.extraServicesPrice),
+        amount: Number(booking.extraServicesPrice),
+      });
+    }
+  }
+
+  // 3. Fallback: payment description
+  if (billSlipItems.length === 0) {
+    const desc = booking?.eventType
+      ? `${booking.eventType} Celebration (${currentPay?.paymentType || propData?.paymentType || 'Payment'} Received)`
+      : currentPay?.notes || propData?.notes || `Payment Voucher #${activeReceiptNum}`;
+    billSlipItems = [
+      {
+        description: desc,
+        rate: activeAmount > 0 ? activeAmount : grandTotal,
+        amount: activeAmount > 0 ? activeAmount : grandTotal,
+      },
+    ];
+  }
+
+  const cleanBillNo = activeReceiptNum
+    .replace(/^BV-REC-INV-/, 'INV-')
+    .replace(/^BV-REC-BV-BKG-/, 'BKG-')
+    .replace(/^BV-REC-/, '') || '118';
+
+  const billSubtotal = invoice?.subtotal !== undefined
+    ? Number(invoice.subtotal)
+    : (booking?.subtotal !== undefined ? Number(booking.subtotal) : grandTotal);
+
+  const billTaxPercent = invoice?.taxPercent !== undefined
+    ? Number(invoice.taxPercent)
+    : (booking?.taxPercent !== undefined ? Number(booking.taxPercent) : 5);
+
+  const billCgst = invoice?.cgstAmount !== undefined
+    ? Number(invoice.cgstAmount)
+    : (invoice?.taxAmount ? Number(invoice.taxAmount) / 2 : undefined);
+
+  const billSgst = invoice?.sgstAmount !== undefined
+    ? Number(invoice.sgstAmount)
+    : (invoice?.taxAmount ? Number(invoice.taxAmount) / 2 : undefined);
+
+  return (
+    <div className="w-full">
+      {/* Format Selector Bar (visible only in UI preview) */}
+      {showPreviewInUI && (
+        <div className="no-print mb-3 p-2.5 rounded-2xl bg-white border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setFormat('RED_BOOKLET')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                format === 'RED_BOOKLET'
+                  ? 'bg-[#B91C1C] text-white shadow-xs'
+                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+              }`}
+            >
+              <span>🔴</span>
+              <span>Official Bill (लाल बुकलेट बिल)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormat('STANDARD_RECEIPT')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                format === 'STANDARD_RECEIPT'
+                  ? 'bg-[#14281D] text-[#F3E7C4] shadow-xs'
+                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+              }`}
+            >
+              <span>📄</span>
+              <span>Standard A4 Receipt</span>
+            </button>
+          </div>
+          <span className="text-[11px] text-stone-500 font-medium">
+            {format === 'RED_BOOKLET' ? '🔴 Physical Red Booklet format with 7 handwritten terms' : 'Standard multi-column payment voucher'}
+          </span>
+        </div>
+      )}
+
+      {/* Target Container for Printing */}
+      <div
+        id="bandhan-print-receipt"
+        className={`print-receipt-container font-sans bg-white text-stone-900 ${
+          showPreviewInUI ? 'block' : 'hidden print:block'
+        }`}
+        style={{
+          width: '100%',
+          maxWidth: '210mm',
+          margin: '0 auto',
+        }}
+      >
+        {format === 'RED_BOOKLET' ? (
+          <OfficialBillSlip
+            billNumber={cleanBillNo}
+            date={activePaymentDate}
+            billType={booking?.eventType?.toLowerCase().includes('jeevika') ? 'FOOD BILL' : 'HOTEL / FOOD BILL'}
+            customerName={customer?.name || ''}
+            customerAddress={customer?.address || 'Pakariyabar, Chandwa, Ara'}
+            customerMobile={customer?.mobile || ''}
+            customerGstin={(customer as any)?.gstin || ''}
+            items={billSlipItems}
+            subtotal={billSubtotal}
+            discount={Number(invoice?.discount || booking?.discount || 0)}
+            taxPercent={billTaxPercent}
+            cgstAmount={billCgst}
+            sgstAmount={billSgst}
+            grandTotal={grandTotal}
+            paidAmount={totalPaidToDate}
+            balanceAmount={outstandingBalance}
+            showTerms={true}
+          />
+        ) : (
+          <div className="p-8 sm:p-10 border border-stone-300 print:border-none print:p-0 space-y-5">
         {/* =========================================================================
             1. HEADER: BRAND CREST & VENUE PARTICULARS
            ========================================================================= */}
@@ -593,6 +721,8 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
             Bandhan Vatika Management System • Verification: AUTH-{Date.now().toString().slice(-8)}
           </div>
         </div>
+      </div>
+        )}
       </div>
     </div>
   );

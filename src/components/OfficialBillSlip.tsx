@@ -85,8 +85,8 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
 
   const inWords = amountToIndianWords(calculatedGrandTotal);
 
-  // Pad items so the bill maintains that classic receipt paper proportion
-  const minimumRows = Math.max(6, cleanItems.length);
+  // Pad items so the bill maintains that classic receipt paper proportion while staying on 1 page
+  const minimumRows = Math.max(3, cleanItems.length);
   const emptyRowsCount = Math.max(0, minimumRows - cleanItems.length);
 
   return (
@@ -95,7 +95,7 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
         @media print {
           @page {
             size: A4 portrait;
-            margin: 8mm;
+            margin: 6mm 8mm;
           }
           body {
             background: white !important;
@@ -107,12 +107,14 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
             max-width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
           }
         }
       `}</style>
 
       {/* Main Red Slip Container with dashed/double outline */}
-      <div className="border-[2.5px] border-[#B91C1C] rounded-lg p-3 sm:p-5 bg-white relative shadow-sm print:shadow-none">
+      <div className="border-[2.5px] border-[#B91C1C] rounded-lg p-3 sm:p-4 bg-white relative shadow-sm print:shadow-none">
         
         {/* =========================================================================
             HEADER: HOTEL | FOOD BILL | GSTIN + TITLE + ADDRESS + PHONE
@@ -289,13 +291,35 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
               </tr>
 
               <tr className="border-t-[1.5px] border-[#B91C1C] bg-red-50/30">
-                <td className="py-1.5 px-2 border-r-[1.5px] border-[#B91C1C] font-black text-[#B91C1C] text-right text-xs uppercase">
+                <td className="py-1 px-2 border-r-[1.5px] border-[#B91C1C] font-black text-[#B91C1C] text-right text-xs uppercase">
                   G. TOTAL
                 </td>
-                <td className="py-1.5 px-2 text-right font-mono font-black text-blue-950 text-sm">
+                <td className="py-1 px-2 text-right font-mono font-black text-blue-950 text-xs sm:text-sm">
                   {calculatedGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </td>
               </tr>
+
+              {paidAmount !== undefined && Number(paidAmount) > 0 && (
+                <tr className="border-t border-red-300">
+                  <td className="py-0.5 px-2 border-r-[1.5px] border-[#B91C1C] font-bold text-emerald-800 text-right text-[11px]">
+                    Paid / Received
+                  </td>
+                  <td className="py-0.5 px-2 text-right font-mono font-bold text-emerald-800 text-xs">
+                    ₹{Number(paidAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              )}
+
+              {balanceAmount !== undefined && Number(balanceAmount) > 0 && (
+                <tr className="border-t border-red-300 bg-amber-50/40">
+                  <td className="py-0.5 px-2 border-r-[1.5px] border-[#B91C1C] font-bold text-amber-900 text-right text-[11px]">
+                    Balance Due
+                  </td>
+                  <td className="py-0.5 px-2 text-right font-mono font-bold text-amber-900 text-xs">
+                    ₹{Number(balanceAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -303,11 +327,11 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
         {/* =========================================================================
             FOOTER: Rupees in words + Thanking You + E.&O.E. + For : BANDHAN VATICA
            ========================================================================= */}
-        <div className="mt-3 pt-2 text-xs sm:text-sm text-[#B91C1C]">
+        <div className="mt-2 pt-1 text-xs text-[#B91C1C]">
           {/* Rupees In Words */}
           <div className="flex items-baseline gap-1">
             <span className="font-bold shrink-0">Rupees</span>
-            <div className="grow border-b border-dotted border-[#B91C1C] text-blue-900 font-bold italic px-2 font-serif text-xs sm:text-sm">
+            <div className="grow border-b border-dotted border-[#B91C1C] text-blue-900 font-bold italic px-2 font-serif text-[11px] sm:text-xs">
               {inWords.replace('Rupees ', '').replace(' Only', '')}
             </div>
             <span className="font-bold shrink-0">Only</span>
@@ -315,13 +339,13 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
           </div>
 
           {/* Bottom signatures */}
-          <div className="flex justify-between items-end mt-4 pt-1">
-            <div className="text-[11px] font-black tracking-wider text-[#B91C1C]">
+          <div className="flex justify-between items-end mt-3 pt-1">
+            <div className="text-[10px] font-black tracking-wider text-[#B91C1C]">
               E.&amp;O.E.
             </div>
             <div className="text-right">
-              <div className="h-6 border-b border-dotted border-[#B91C1C] w-48 mb-1" />
-              <div className="font-bold text-xs uppercase tracking-wider text-[#B91C1C]">
+              <div className="h-5 border-b border-dotted border-[#B91C1C] w-44 mb-0.5" />
+              <div className="font-bold text-[11px] uppercase tracking-wider text-[#B91C1C]">
                 For : BANDHAN VATICA
               </div>
             </div>
@@ -334,32 +358,32 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
           OFFICIAL TERMS & CONDITIONS (हस्तलिखित 7 नियम व शर्तें)
          ========================================================================= */}
       {showTerms && (
-        <div className="mt-4 p-4 border-[1.5px] border-stone-400 rounded-lg bg-stone-50/70 text-stone-800 text-xs">
-          <div className="font-bold text-stone-900 text-sm pb-1 mb-2 border-b border-stone-300 flex items-center justify-between">
+        <div className="mt-2.5 p-3 border-[1.5px] border-stone-400 rounded-lg bg-stone-50/70 text-stone-800 text-xs">
+          <div className="font-bold text-stone-900 text-xs pb-1 mb-1.5 border-b border-stone-300 flex items-center justify-between">
             <span>नोट :- (नियम व शर्तें / Terms &amp; Conditions)</span>
-            <span className="text-[11px] font-normal text-stone-500">बंधन वाटिका, पकड़ीयावर, चन्दवाँ, आरा</span>
+            <span className="text-[10px] font-normal text-stone-500">बंधन वाटिका, पकड़ीयावर, चन्दवाँ, आरा</span>
           </div>
 
-          <ol className="list-decimal list-inside space-y-1 text-[11.5px] sm:text-xs leading-relaxed font-medium text-stone-800">
+          <ol className="list-decimal list-inside space-y-0.5 text-[10.5px] sm:text-[11px] leading-snug font-medium text-stone-800">
             {OFFICIAL_TERMS_HINDI.map((rule, idx) => (
-              <li key={idx} className="pl-1">
+              <li key={idx} className="pl-0.5">
                 <span className="text-stone-900">{rule}</span>
               </li>
             ))}
           </ol>
 
           {/* Signatures at bottom of terms */}
-          <div className="mt-5 pt-3 border-t border-dashed border-stone-300 flex justify-between items-end text-xs">
+          <div className="mt-3 pt-2 border-t border-dashed border-stone-300 flex justify-between items-end text-xs">
             <div className="text-center">
-              <div className="h-8 border-b border-stone-500 w-40 mb-1" />
-              <div className="font-bold text-stone-800">ह० सट्टेदार</div>
-              <div className="text-[10px] text-stone-500">(Customer Signature)</div>
+              <div className="h-5 border-b border-stone-500 w-36 mb-0.5" />
+              <div className="font-bold text-stone-800 text-[11px]">ह० सट्टेदार</div>
+              <div className="text-[9px] text-stone-500">(Customer Signature)</div>
             </div>
 
             <div className="text-center">
-              <div className="h-8 border-b border-stone-500 w-40 mb-1" />
-              <div className="font-bold text-stone-800">ह० प्रबंधक</div>
-              <div className="text-[10px] text-stone-500">For Bandhan Vatika</div>
+              <div className="h-5 border-b border-stone-500 w-36 mb-0.5" />
+              <div className="font-bold text-stone-800 text-[11px]">ह० प्रबंधक</div>
+              <div className="text-[9px] text-stone-500">For Bandhan Vatika</div>
             </div>
           </div>
         </div>

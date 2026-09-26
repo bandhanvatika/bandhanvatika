@@ -602,7 +602,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({ searchQuery = '' }) 
           onClose={() => setActiveReceipt(null)}
           title={`Receipt Voucher #${activeReceipt.receiptNumber || activeReceipt.receipt_number}`}
           subtitle="Official Money Receipt Voucher"
-          maxWidth="lg"
+          maxWidth="3xl"
         >
           <div className="space-y-4">
             <div className="max-h-[70vh] overflow-y-auto rounded-xl border border-stone-200 shadow-inner p-2 bg-stone-100">
@@ -616,7 +616,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({ searchQuery = '' }) 
                 className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold shadow-xs cursor-pointer transition-all"
               >
                 <Printer className="w-3.5 h-3.5 text-[#C5A059]" />
-                <span>Print A4 Receipt</span>
+                <span>Print Bill / Receipt</span>
               </button>
               <button
                 type="button"

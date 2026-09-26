@@ -372,12 +372,25 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                       </span>
                     </td>
                     <td className="py-3.5 px-3 text-right space-x-1 whitespace-nowrap">
+                      {/* Print Official Red Booklet Bill Button */}
+                      <button
+                        onClick={() => {
+                          setActiveInvoice(inv);
+                          setBillFormat('RED_BOOKLET');
+                        }}
+                        className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-red-50 hover:bg-red-100 text-[#B91C1C] border border-red-200 text-xs font-bold transition-all shadow-xs cursor-pointer mr-1"
+                        title="Print Official Red Booklet Bill (लाल बुकलेट बिल)"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-[#B91C1C]" />
+                        <span>Print Bill</span>
+                      </button>
+
                       {/* Print Payment Receipt */}
                       {Number(inv.paidAmount) > 0 && (
                         <button
                           onClick={() => handlePrintReceipt(inv)}
                           className="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50"
-                          title="Print Payment Receipt Voucher (A4)"
+                          title="Print Payment Receipt Voucher"
                         >
                           <ReceiptText className="w-4 h-4" />
                         </button>
@@ -387,7 +400,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                       <button
                         onClick={() => setActiveInvoice(inv)}
                         className="p-1.5 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100"
-                        title="View / Print Tax Invoice"
+                        title="View Tax Invoice"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -1073,7 +1086,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                 className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold shadow-xs cursor-pointer transition-all"
               >
                 <Printer className="w-3.5 h-3.5 text-[#C5A059]" />
-                <span>Print A4 Receipt</span>
+                <span>Print Bill / Receipt</span>
               </button>
               <button
                 type="button"

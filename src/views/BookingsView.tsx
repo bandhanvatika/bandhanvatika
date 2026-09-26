@@ -1402,7 +1402,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                 className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold shadow-xs cursor-pointer transition-all"
               >
                 <Printer className="w-3.5 h-3.5 text-[#C5A059]" />
-                <span>Print A4 Receipt</span>
+                <span>Print Bill / Receipt</span>
               </button>
               <button
                 type="button"
