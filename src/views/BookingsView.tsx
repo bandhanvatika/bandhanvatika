@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 
 interface BookingsViewProps {
-  onOpenNewBooking: () => void;
+  onOpenNewBooking: (dateStr?: string, pkg?: 'STANDARD' | 'JEEVIKA') => void;
   onSelectBookingForInvoice?: (booking: Booking) => void;
   onSelectBookingForPayment?: (booking: Booking) => void;
   searchQuery?: string;
@@ -336,13 +336,25 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
 
         <div className="flex items-center space-x-2.5">
           {hasRole(['OWNER', 'MANAGER', 'RECEPTIONIST']) && (
-            <button
-              onClick={onOpenNewBooking}
-              className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold transition-all shadow-xs"
-            >
-              <Plus className="w-4 h-4 text-[#C5A059]" />
-              <span>Create New Booking</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => onOpenNewBooking?.(undefined, 'JEEVIKA')}
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-[#B91C1C] border border-red-200 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="1-Click JEEViKA Training & Food Booking (जीविका)"
+              >
+                <span>🌾</span>
+                <span>New JEEViKA Booking</span>
+              </button>
+
+              <button
+                onClick={() => onOpenNewBooking?.()}
+                className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-[#C5A059]" />
+                <span>Create New Booking</span>
+              </button>
+            </>
           )}
         </div>
       </div>

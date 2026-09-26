@@ -66,6 +66,7 @@ const AppContent: React.FC = () => {
   // Global New Booking Wizard Modal
   const [isBookingModalOpen, setIsBookingModalOpen] = useState<boolean>(false);
   const [bookingModalInitialDate, setBookingModalInitialDate] = useState<string | undefined>(undefined);
+  const [bookingModalInitialPackage, setBookingModalInitialPackage] = useState<'STANDARD' | 'JEEVIKA'>('STANDARD');
 
   // Trigger reload key for refresh
   const [refreshKey, setRefreshKey] = useState<number>(0);
@@ -95,8 +96,9 @@ const AppContent: React.FC = () => {
     return <LoginView />;
   }
 
-  const handleOpenNewBooking = (dateStr?: string) => {
+  const handleOpenNewBooking = (dateStr?: string, pkg?: 'STANDARD' | 'JEEVIKA') => {
     setBookingModalInitialDate(dateStr);
+    setBookingModalInitialPackage(pkg || 'STANDARD');
     setIsBookingModalOpen(true);
   };
 
@@ -135,7 +137,7 @@ const AppContent: React.FC = () => {
         return (
           <BookingsView
             key={`bkg-${refreshKey}`}
-            onOpenNewBooking={() => handleOpenNewBooking()}
+            onOpenNewBooking={(dateStr, pkg) => handleOpenNewBooking(dateStr, pkg)}
             searchQuery={searchQuery}
           />
         );
@@ -216,6 +218,7 @@ const AppContent: React.FC = () => {
           onClose={() => setIsBookingModalOpen(false)}
           onSuccess={handleBookingSuccess}
           initialDate={bookingModalInitialDate}
+          initialPackage={bookingModalInitialPackage}
         />
       )}
     </div>

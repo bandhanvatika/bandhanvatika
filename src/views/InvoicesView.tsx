@@ -75,24 +75,25 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleApplyJeevikaTemplate = () => {
+    setCreateMode('MANUAL');
     const jeevikaCust = customers.find(
-      (c) => c.name.toLowerCase().includes('jeevika') || c.customerCode?.toLowerCase().includes('jeevika')
+      (c) => c.name.toLowerCase().includes('jeevika') || c.customerCode?.toLowerCase().includes('jeevika') || c.name.includes('जीविका')
     );
     if (jeevikaCust) {
       setCustomerId(jeevikaCust.id);
     }
-    setEventType('Jeevika Staff Training (Food Program)');
+    setEventType('JEEViKA Training (जीविका प्रशिक्षण)');
     setTaxPercent(5);
     setDiscount(0);
     setItems([
       {
-        description: '2-Day Staff Training (35 Persons x 2 Days = 70 Plates: Breakfast + Lunch + Dinner)',
+        description: 'JEEViKA 2-Day Staff Training (35 Persons x 2 Days = 70 Plates: Breakfast + Lunch + Dinner)',
         quantity: 70,
         rate: 514.29,
         amount: 36000,
       },
     ]);
-    setNotes('Hall allocated complimentary for Jeevika Training program. Billing exclusively for food/catering with 5% GST.');
+    setNotes('Hall allocated complimentary (₹0) for JEEViKA (जीविका) Training program. Billing exclusively for food/catering with 5% GST.');
   };
 
   const fetchInvoices = async () => {
@@ -260,16 +261,29 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
         </div>
 
         {hasRole(['OWNER', 'ACCOUNTANT', 'MANAGER']) && (
-          <button
-            onClick={() => {
-              setErrorMsg('');
-              setShowCreate(true);
-            }}
-            className="flex items-center space-x-1.5 px-4 py-2.5 bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold rounded-xl transition-all shadow-xs"
-          >
-            <Plus className="w-4 h-4 text-[#C5A059]" />
-            <span>Generate Invoice</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setErrorMsg('');
+                setShowCreate(true);
+                handleApplyJeevikaTemplate();
+              }}
+              className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold rounded-xl transition-all shadow-xs"
+              title="1-Click JEEViKA (जीविका) Food Catering Invoice"
+            >
+              <span>🌾 New JEEViKA Food Bill</span>
+            </button>
+            <button
+              onClick={() => {
+                setErrorMsg('');
+                setShowCreate(true);
+              }}
+              className="flex items-center space-x-1.5 px-4 py-2.5 bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold rounded-xl transition-all shadow-xs"
+            >
+              <Plus className="w-4 h-4 text-[#C5A059]" />
+              <span>Generate Invoice</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -875,10 +889,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
               </div>
             ) : (
               <div className="space-y-4">
-                {/* 1-Click Jeevika Preset Banner */}
+                {/* 1-Click JEEViKA Preset Banner */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-red-50/80 border border-red-200 rounded-xl gap-2">
                   <div className="text-xs text-[#B91C1C]">
-                    ⚡ <strong>Jeevika Training Event?</strong> Hall is free (₹0), billed per food plate with 5% GST.
+                    ⚡ <strong>JEEViKA (जीविका) Training Event?</strong> Hall is free (₹0), billed per food plate with 5% GST.
                   </div>
                   <button
                     type="button"
@@ -886,7 +900,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                     className="px-3 py-1.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white rounded-lg text-xs font-bold shadow-xs flex items-center gap-1.5 self-start sm:self-auto shrink-0"
                   >
                     <span>🍽️</span>
-                    <span>1-Click Fill Jeevika Food Bill</span>
+                    <span>1-Click Fill JEEViKA Food Bill</span>
                   </button>
                 </div>
 
@@ -1013,7 +1027,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                       onChange={(e) => setTaxPercent(Number(e.target.value))}
                       className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold outline-none"
                     >
-                      <option value={5}>5% (Food &amp; Catering - e.g. Jeevika)</option>
+                      <option value={5}>5% (Food &amp; Catering - JEEViKA / जीविका)</option>
                       <option value={18}>18% (Standard Banquet &amp; Rooms)</option>
                       <option value={12}>12% (Hotel Stay)</option>
                       <option value={0}>0% (Tax Exempt / Non-GST)</option>
