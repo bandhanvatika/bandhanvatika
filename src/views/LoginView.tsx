@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
-import { Sparkles, Lock, User, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Lock, User, ArrowRight, ShieldCheck, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { BrandLogo } from '../components/BrandLogo.tsx';
 
 export const LoginView: React.FC = () => {
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -130,6 +131,7 @@ export const LoginView: React.FC = () => {
                   <input
                     type="text"
                     required
+                    autoComplete="off"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="admin or admin@bandhanvatika.com"
@@ -147,13 +149,22 @@ export const LoginView: React.FC = () => {
                 <div className="relative">
                   <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 rounded-xl text-sm outline-none transition-all"
+                    placeholder="Enter password"
+                    className="w-full pl-10 pr-11 py-2.5 bg-stone-50 border border-stone-200 focus:border-[#C5A059] focus:ring-2 focus:ring-[#C5A059]/20 rounded-xl text-sm outline-none transition-all font-mono"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
