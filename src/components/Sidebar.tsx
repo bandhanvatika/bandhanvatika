@@ -16,6 +16,7 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { UserRole } from '../types/index.ts';
@@ -94,8 +95,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Brand Header */}
-        <div className="p-4 border-b border-[#264433] flex items-center bg-[#0F2016]">
+        <div className="p-4 border-b border-[#264433] flex items-center justify-between bg-[#0F2016]">
           <BrandLogo variant="horizontal" theme="dark" size="md" />
+          <button
+            onClick={() => setIsOpenMobile(false)}
+            className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-white/10 lg:hidden cursor-pointer"
+            aria-label="Close Sidebar"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Navigation list */}

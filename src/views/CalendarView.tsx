@@ -348,60 +348,62 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* VIEW MODE 1: Month Calendar Grid */}
       {viewMode === 'MONTH' ? (
-        <div className="p-4 sm:p-6 rounded-3xl bg-white border border-stone-200/80 shadow-xs overflow-hidden">
-          {/* Days of week header */}
-          <div className="grid grid-cols-7 gap-2 pb-3 border-b border-stone-200 text-center">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
-              <div
-                key={d}
-                className={`text-xs font-extrabold uppercase tracking-wider ${
-                  i === 0 ? 'text-rose-500' : 'text-stone-600'
-                }`}
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar Day Cells */}
-          <div className="grid grid-cols-7 gap-2 mt-2">
-            {calendarCells.map((day, idx) => {
-              if (day === null) {
-                return (
+        <div className="p-3 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-stone-200/80 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto pb-2 -mx-1 px-1 sm:mx-0 sm:px-0">
+            <div className="min-w-[560px] sm:min-w-0">
+              {/* Days of week header */}
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2 pb-3 border-b border-stone-200 text-center">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
                   <div
-                    key={`empty-${idx}`}
-                    className="min-h-[120px] bg-stone-50/50 rounded-2xl border border-dashed border-stone-200/60"
-                  />
-                );
-              }
+                    key={d}
+                    className={`text-[11px] sm:text-xs font-extrabold uppercase tracking-wider ${
+                      i === 0 ? 'text-rose-500' : 'text-stone-600'
+                    }`}
+                  >
+                    {d}
+                  </div>
+                ))}
+              </div>
 
-              const dayEvents = getEventsForDay(day);
-              const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const isToday =
-                new Date().getDate() === day &&
-                new Date().getMonth() === month &&
-                new Date().getFullYear() === year;
-              const hasSaya = isAuspiciousDay(dateStr);
-
-              return (
-                <div
-                  key={`day-${day}`}
-                  onClick={() => handleCellClick(dateStr)}
-                  className={`group min-h-[120px] p-2 rounded-2xl border transition-all flex flex-col justify-between select-none ${
-                    canCreateBooking ? 'cursor-pointer' : ''
-                  } ${
-                    isToday
-                      ? 'border-[#C5A059] bg-[#C5A059]/5 shadow-xs ring-1 ring-[#C5A059]/50'
-                      : hasSaya
-                      ? 'border-amber-300/80 bg-amber-50/20 hover:border-[#C5A059] hover:bg-stone-50'
-                      : 'border-stone-200/80 hover:border-[#C5A059]/80 hover:bg-stone-50/70 hover:shadow-xs bg-white'
-                  }`}
-                  title={
-                    canCreateBooking
-                      ? `Click to book an event on ${dateStr}`
-                      : `${dayEvents.length} event(s) scheduled on ${dateStr}`
+              {/* Calendar Day Cells */}
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mt-2">
+                {calendarCells.map((day, idx) => {
+                  if (day === null) {
+                    return (
+                      <div
+                        key={`empty-${idx}`}
+                        className="min-h-[90px] sm:min-h-[120px] bg-stone-50/50 rounded-xl sm:rounded-2xl border border-dashed border-stone-200/60"
+                      />
+                    );
                   }
-                >
+
+                  const dayEvents = getEventsForDay(day);
+                  const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const isToday =
+                    new Date().getDate() === day &&
+                    new Date().getMonth() === month &&
+                    new Date().getFullYear() === year;
+                  const hasSaya = isAuspiciousDay(dateStr);
+
+                  return (
+                    <div
+                      key={`day-${day}`}
+                      onClick={() => handleCellClick(dateStr)}
+                      className={`group min-h-[90px] sm:min-h-[120px] p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between select-none ${
+                        canCreateBooking ? 'cursor-pointer' : ''
+                      } ${
+                        isToday
+                          ? 'border-[#C5A059] bg-[#C5A059]/5 shadow-xs ring-1 ring-[#C5A059]/50'
+                          : hasSaya
+                          ? 'border-amber-300/80 bg-amber-50/20 hover:border-[#C5A059] hover:bg-stone-50'
+                          : 'border-stone-200/80 hover:border-[#C5A059]/80 hover:bg-stone-50/70 hover:shadow-xs bg-white'
+                      }`}
+                      title={
+                        canCreateBooking
+                          ? `Click to book an event on ${dateStr}`
+                          : `${dayEvents.length} event(s) scheduled on ${dateStr}`
+                      }
+                    >
                   {/* Cell Header: Day Number, Saya Badge, and Quick Book Action */}
                   <div className="flex items-center justify-between gap-1 mb-1">
                     <div className="flex items-center space-x-1">
@@ -489,8 +491,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               );
             })}
           </div>
+        </div>
+      </div>
 
-          {/* Calendar Legend */}
+      {/* Calendar Legend */}
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4 mt-5 border-t border-stone-200 text-xs text-stone-600">
             <div className="flex flex-wrap items-center gap-4">
               <span className="font-bold text-stone-800 uppercase tracking-wider text-[10px]">

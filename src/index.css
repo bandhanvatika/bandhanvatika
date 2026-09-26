@@ -7,9 +7,14 @@
   }
   body {
     font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent;
   }
   .font-brand {
     font-family: var(--font-brand);
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 }
 

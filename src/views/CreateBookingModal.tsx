@@ -429,7 +429,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     >
       {/* Step Progress Bar */}
       <div className="mb-4">
-        <div className="grid grid-cols-4 gap-2 text-center text-xs font-semibold">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-center text-xs font-semibold">
           {[
             { num: 1, label: 'Customer' },
             { num: 2, label: 'Event Details' },
@@ -438,7 +438,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           ].map((s) => (
             <div
               key={s.num}
-              className={`p-2.5 rounded-xl border transition-all ${
+              className={`p-1.5 sm:p-2.5 rounded-xl border transition-all ${
                 step === s.num
                   ? 'bg-[#14281D] text-[#F3E7C4] border-[#14281D] shadow-sm'
                   : step > s.num
@@ -446,8 +446,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                   : 'bg-stone-50 text-stone-400 border-stone-200'
               }`}
             >
-              <div className="text-[10px] tracking-widest uppercase">Step {s.num}</div>
-              <div className="truncate font-bold mt-0.5">{s.label}</div>
+              <div className="text-[9px] sm:text-[10px] tracking-widest uppercase">Step {s.num}</div>
+              <div className="truncate font-bold text-[10px] sm:text-xs mt-0.5">{s.label}</div>
             </div>
           ))}
         </div>

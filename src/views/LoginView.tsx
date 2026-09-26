@@ -32,14 +32,14 @@ export const LoginView: React.FC = () => {
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl border border-stone-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
         
         {/* Left Column: Luxury Venue Branding */}
-        <div className="lg:col-span-6 bg-gradient-to-br from-[#14281D] via-[#102218] to-[#0A160F] p-8 sm:p-12 text-[#FBF9F5] flex flex-col justify-between relative overflow-hidden">
+        <div className="lg:col-span-6 bg-gradient-to-br from-[#14281D] via-[#102218] to-[#0A160F] p-6 sm:p-8 lg:p-12 text-[#FBF9F5] flex flex-col justify-between relative overflow-hidden">
           {/* Subtle decorative gold glow */}
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-[#C5A059]/15 blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-[#C5A059]/10 blur-3xl pointer-events-none" />
 
           {/* Top Logo */}
           <div className="relative z-10 flex flex-col items-start">
-            <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#C5A059]/20 border border-[#C5A059]/30 text-[#E2C07D] text-xs font-semibold uppercase tracking-widest mb-6">
+            <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#C5A059]/20 border border-[#C5A059]/30 text-[#E2C07D] text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-4 sm:mb-6">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Internal Enterprise Portal</span>
             </div>
@@ -47,8 +47,8 @@ export const LoginView: React.FC = () => {
             <BrandLogo variant="horizontal" theme="dark" size="lg" />
           </div>
 
-          {/* Center Visual Motif & Features */}
-          <div className="my-8 relative z-10 space-y-4">
+          {/* Center Visual Motif & Features (Visible on large screens) */}
+          <div className="hidden lg:block my-8 relative z-10 space-y-4">
             <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs space-y-3">
               <div className="text-xs uppercase tracking-wider text-[#D4AF37] font-bold">
                 V1 Production Management
@@ -71,7 +71,7 @@ export const LoginView: React.FC = () => {
           </div>
 
           {/* Footer note */}
-          <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-stone-400">
+          <div className="hidden lg:flex relative z-10 pt-4 border-t border-white/10 items-center justify-between text-[11px] text-stone-400">
             <span>Bandhan Vatika Hospitality Suite</span>
             <span className="flex items-center space-x-1 text-[#C5A059]">
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -81,7 +81,7 @@ export const LoginView: React.FC = () => {
         </div>
 
         {/* Right Column: Sign In Form */}
-        <div className="lg:col-span-6 p-8 sm:p-12 flex flex-col justify-between bg-white">
+        <div className="lg:col-span-6 p-6 sm:p-8 lg:p-12 flex flex-col justify-between bg-white">
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-stone-900 font-brand">Staff Sign In</h2>
