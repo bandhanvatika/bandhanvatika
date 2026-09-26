@@ -410,12 +410,15 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
               {/* Header: Company & Title */}
               <div className="flex flex-col sm:flex-row justify-between items-start pb-6 border-b-2 border-stone-800 gap-4">
                 <div className="space-y-1">
+                  <div className="text-[11px] font-bold text-[#8B6B23] tracking-widest uppercase">
+                    ॥ श्री गणेशाय नमः ॥
+                  </div>
                   <BrandLogo variant="print" />
-                  <p className="text-xs text-stone-600 max-w-sm pt-1">
+                  <p className="text-xs text-stone-700 max-w-sm pt-1 font-medium leading-relaxed">
                     {(activeInvoice as any).parsedSnapshot?.address || settings?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)'}
                   </p>
-                  <p className="text-xs font-semibold text-stone-700">
-                    Phone: {(activeInvoice as any).parsedSnapshot?.phone || settings?.phone || '9431086933, 8409480911, 9015755799'} | Email: {(activeInvoice as any).parsedSnapshot?.email || settings?.email || 'contact@bandhanvatika.com'}
+                  <p className="text-xs font-bold text-stone-800">
+                    मो० नं० (Mob.) : 9431086933, 8409480911, 9015755799
                   </p>
                   <p className="text-xs font-mono font-bold text-[#14281D]">
                     GSTIN: {(activeInvoice as any).parsedSnapshot?.gstin || settings?.gstin || '10AAAAA0000A1Z5'}
@@ -587,9 +590,17 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
 
               {/* Terms & Signature */}
               <div className="mt-8 pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-end gap-6 text-[10px] text-stone-500">
-                <div className="max-w-md space-y-1">
-                  <p className="font-bold text-stone-700 uppercase">Terms & Conditions:</p>
-                  <p>{activeInvoice.terms || (activeInvoice as any).parsedSnapshot?.terms || settings?.termsAndConditions || 'Payment to be cleared prior to event.'}</p>
+                <div className="max-w-lg space-y-1.5 text-left">
+                  <p className="font-bold text-stone-800 uppercase tracking-wider text-[11px]">
+                    नियम व शर्तें (Terms & Conditions):
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1 text-stone-700 text-[11px] leading-relaxed font-medium">
+                    <li>निश्चित समय या दिन पर उत्सव भवन की आवश्यकता न रहने पर एडवांस वापस नहीं होगा।</li>
+                    <li>तय सट्टा का एक तिहाई (1/3) एडवांस देय होगा।</li>
+                    <li>उत्सव भवन में साफ-सफाई एवं सामान के टूटने-फूटने की जिम्मेवारी ग्राहक की होगी।</li>
+                    <li>इन्ट्री से 5 दिन पहले पूरी रकम चुकता करना अनिवार्य है।</li>
+                    <li>सभी तरह की गाड़ियां भाड़े पर उचित मूल्य पर उपलब्ध हैं।</li>
+                  </ol>
                 </div>
                 <div className="text-center sm:text-right">
                   <div className="h-10 border-b border-stone-400 w-40 mb-1" />

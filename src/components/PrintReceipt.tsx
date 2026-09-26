@@ -242,15 +242,16 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
             1. HEADER: BRAND CREST & VENUE PARTICULARS
            ========================================================================= */}
         <div className="flex justify-between items-start pb-5 border-b-2 border-[#14281D]">
-          <div className="space-y-1 max-w-[62%]">
+          <div className="space-y-1 max-w-[65%]">
+            <div className="text-[11px] font-bold text-[#8B6B23] tracking-widest uppercase">
+              ॥ श्री गणेशाय नमः ॥
+            </div>
             <BrandLogo variant="print" />
-            <p className="text-[11px] text-stone-600 leading-relaxed">
+            <p className="text-[11px] text-stone-700 leading-relaxed font-medium">
               {biz.address}
             </p>
-            <div className="flex flex-wrap gap-x-4 text-[10px] text-stone-500 pt-0.5">
-              <span><strong>Phone:</strong> {biz.phone}</span>
-              <span><strong>Email:</strong> {biz.email}</span>
-              <span><strong>GSTIN:</strong> {biz.gstin}</span>
+            <div className="flex flex-wrap gap-x-4 text-[11px] text-stone-800 pt-0.5 font-bold">
+              <span>Mob. : 9431086933, 8409480911, 9015755799</span>
             </div>
           </div>
 
@@ -530,16 +531,16 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
            ========================================================================= */}
         <div className="pt-2 border-t border-stone-200 grid grid-cols-2 gap-4 text-[10px] text-stone-500 leading-tight">
           <div className="space-y-1">
-            <span className="font-bold text-stone-700 uppercase tracking-wider block">
-              Terms & Important Conditions:
+            <span className="font-bold text-stone-800 uppercase tracking-wider block text-[11px]">
+              नियम व शर्तें (Terms & Conditions):
             </span>
-            <ul className="list-disc list-inside space-y-0.5 text-stone-600">
-              <li>निश्चित समय/दिन पर उत्सव भवन की आवश्यकता न रहने पर एडवांस वापस नहीं होगा।</li>
+            <ol className="list-decimal list-inside space-y-1 text-stone-700 font-medium text-[10.5px] leading-relaxed">
+              <li>निश्चित समय या दिन पर उत्सव भवन की आवश्यकता न रहने पर एडवांस वापस नहीं होगा।</li>
               <li>तय सट्टा का एक तिहाई (1/3) एडवांस देय होगा।</li>
               <li>उत्सव भवन में साफ-सफाई एवं सामान के टूटने-फूटने की जिम्मेवारी ग्राहक की होगी।</li>
               <li>इन्ट्री से 5 दिन पहले पूरी रकम चुकता करना अनिवार्य है।</li>
               <li>सभी तरह की गाड़ियां भाड़े पर उचित मूल्य पर उपलब्ध हैं।</li>
-            </ul>
+            </ol>
           </div>
 
           <div className="space-y-1 bg-stone-50 p-2.5 rounded-lg border border-stone-200 font-mono text-[10px]">

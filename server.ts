@@ -1355,6 +1355,12 @@ const ALLOWED_STATUS_TRANSITIONS: Record<string, string[]> = {
   CANCELLED: [],
 };
 
+export const BANDHAN_VATIKA_TERMS = `1. निश्चित समय या दिन पर उत्सव भवन की आवश्यकता न रहने पर एडवांस वापस नहीं होगा।
+2. तय सट्टा का एक तिहाई (1/3) एडवांस देय होगा।
+3. उत्सव भवन में साफ-सफाई एवं सामान के टूटने-फूटने की जिम्मेवारी ग्राहक की होगी।
+4. इन्ट्री से 5 दिन पहले पूरी रकम चुकता करना अनिवार्य है।
+5. सभी तरह की गाड़ियां भाड़े पर उचित मूल्य पर उपलब्ध हैं।`;
+
 // GET /api/v1/bookings — List bookings with search, status, hall, customer, date filters and pagination
 app.get('/api/v1/bookings', authenticate, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -1878,6 +1884,7 @@ app.post('/api/v1/bookings', authenticate, requireRoles(['OWNER', 'MANAGER', 'RE
           balanceAmount: fin.balanceAmount,
           status: Number(fin.balanceAmount) === 0 ? 'PAID' : 'PARTIAL',
           dueDate: eventDate,
+          terms: BANDHAN_VATIKA_TERMS,
           notes: `Invoice generated for Booking #${bookingNumber}`,
         });
 
@@ -2816,7 +2823,7 @@ app.post('/api/v1/quotations', authenticate, requireRoles(['OWNER', 'MANAGER', '
       const quotationId = `quo-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
       // Terms handling
-      const defaultTerms = settingRow?.termsAndConditions || '1. Valid for 14 days from generation date.\n2. 50% advance required upon confirmation.';
+      const defaultTerms = settingRow?.termsAndConditions || BANDHAN_VATIKA_TERMS;
       let effTerms = typeof terms === 'string' && terms.trim().length > 0 ? terms.trim() : defaultTerms;
       if (notes && typeof notes === 'string' && notes.trim().length > 0) {
         effTerms = `${effTerms}\n\nNotes: ${notes.trim()}`;
@@ -3432,7 +3439,7 @@ function buildInvoiceSnapshot(settingRow: any, cust: any, taxPercent: number) {
     bankName: settingRow?.bankName || 'HDFC Bank',
     accountNumber: settingRow?.accountNumber || '50200012345678',
     ifscCode: settingRow?.ifscCode || 'HDFC0001234',
-    terms: settingRow?.termsAndConditions || '',
+    terms: settingRow?.termsAndConditions || BANDHAN_VATIKA_TERMS,
     customerName: cust?.name || '',
     customerMobile: cust?.mobile || '',
     customerEmail: cust?.email || '',
@@ -3673,7 +3680,7 @@ app.get('/api/v1/invoices/:id/print', authenticate, async (req: AuthenticatedReq
       accountNumber: parsedSnapshot.accountNumber || s?.accountNumber || '50200012345678',
       ifscCode: parsedSnapshot.ifscCode || s?.ifscCode || 'HDFC0001234',
     };
-    const terms = inv.terms || parsedSnapshot.terms || s?.termsAndConditions || '';
+    const terms = inv.terms || parsedSnapshot.terms || s?.termsAndConditions || BANDHAN_VATIKA_TERMS;
 
     const customerName = parsedSnapshot.customerName || c?.name || 'Valued Guest';
     const customerAddress = parsedSnapshot.customerAddress || c?.address || '';
@@ -3925,7 +3932,7 @@ app.post('/api/v1/invoices', authenticate, requireRoles(['OWNER', 'MANAGER', 'AC
           balanceAmount: fin.grandTotal,
           status: targetStatus as any,
           dueDate,
-          terms: terms || settingRow?.termsAndConditions || null,
+          terms: terms || settingRow?.termsAndConditions || BANDHAN_VATIKA_TERMS,
           notes: notes ? String(notes).trim() : null,
           snapshot,
           createdBy: req.user?.username || 'accountant',
@@ -4074,7 +4081,7 @@ app.post('/api/v1/invoices/from-booking/:bookingId', authenticate, requireRoles(
           balanceAmount: fin.grandTotal,
           status: 'ISSUED',
           dueDate: b.eventDate,
-          terms: settingRow?.termsAndConditions || null,
+          terms: settingRow?.termsAndConditions || BANDHAN_VATIKA_TERMS,
           notes: `Generated from Booking #${b.bookingNumber}`,
           snapshot,
           createdBy: req.user?.username || 'accountant',
@@ -4210,7 +4217,7 @@ app.post('/api/v1/invoices/from-quotation/:quotationId', authenticate, requireRo
           balanceAmount: fin.grandTotal,
           status: 'ISSUED',
           dueDate: quo.eventDate,
-          terms: quo.terms || settingRow?.termsAndConditions || null,
+          terms: quo.terms || settingRow?.termsAndConditions || BANDHAN_VATIKA_TERMS,
           notes: `Generated from Quotation #${quo.quotationNumber}`,
           snapshot,
           createdBy: req.user?.username || 'accountant',

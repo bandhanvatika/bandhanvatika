@@ -1264,13 +1264,18 @@ export const QuotationsView: React.FC<QuotationsViewProps> = ({ searchQuery = ''
               {/* Header */}
               <div className="flex justify-between items-start pb-6 border-b-2 border-stone-800">
                 <div>
+                  <div className="text-[11px] font-bold text-[#8B6B23] tracking-widest uppercase mb-1">
+                    ॥ श्री गणेशाय नमः ॥
+                  </div>
                   <BrandLogo variant="print" />
-                  <p className="text-xs text-stone-500 mt-2">
+                  <p className="text-xs text-stone-700 mt-2 font-medium leading-relaxed">
                     {viewQuotation.settings?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)'}
+                  </p>
+                  <p className="text-xs font-bold text-stone-800">
+                    मो० नं० (Mob.) : 9431086933, 8409480911, 9015755799
                   </p>
                   <p className="text-xs text-stone-500">
                     GSTIN: <span className="font-mono font-semibold">{viewQuotation.settings?.gstin || '10AAAAA0000A1Z5'}</span>
-                    {' · '}Phone: {viewQuotation.settings?.phone || '9431086933, 8409480911, 9015755799'}
                   </p>
                 </div>
                 <div className="text-right space-y-1">
@@ -1397,16 +1402,18 @@ export const QuotationsView: React.FC<QuotationsViewProps> = ({ searchQuery = ''
               </div>
 
               {/* Terms and Conditions */}
-              {viewQuotation.terms && (
-                <div className="pt-4 border-t border-stone-200 text-[11px] text-stone-600 space-y-1">
-                  <div className="font-bold uppercase tracking-wider text-stone-500 text-[10px]">
-                    Terms & Conditions
-                  </div>
-                  <pre className="font-sans whitespace-pre-wrap leading-relaxed">
-                    {viewQuotation.terms}
-                  </pre>
+              <div className="pt-4 border-t border-stone-200 text-[11px] text-stone-700 space-y-1.5">
+                <div className="font-bold uppercase tracking-wider text-stone-800 text-[11px]">
+                  नियम व शर्तें (Terms & Conditions)
                 </div>
-              )}
+                <ol className="list-decimal list-inside space-y-1 text-stone-700 leading-relaxed font-medium text-[11px]">
+                  <li>निश्चित समय या दिन पर उत्सव भवन की आवश्यकता न रहने पर एडवांस वापस नहीं होगा।</li>
+                  <li>तय सट्टा का एक तिहाई (1/3) एडवांस देय होगा।</li>
+                  <li>उत्सव भवन में साफ-सफाई एवं सामान के टूटने-फूटने की जिम्मेवारी ग्राहक की होगी।</li>
+                  <li>इन्ट्री से 5 दिन पहले पूरी रकम चुकता करना अनिवार्य है।</li>
+                  <li>सभी तरह की गाड़ियां भाड़े पर उचित मूल्य पर उपलब्ध हैं।</li>
+                </ol>
+              </div>
 
               {/* Signature Block */}
               <div className="pt-8 border-t border-stone-200 grid grid-cols-2 gap-8 text-xs text-stone-500">
