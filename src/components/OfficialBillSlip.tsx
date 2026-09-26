@@ -55,6 +55,8 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
   cgstAmount,
   sgstAmount,
   grandTotal,
+  paidAmount,
+  balanceAmount,
   showTerms = true,
 }) => {
   // Normalize items

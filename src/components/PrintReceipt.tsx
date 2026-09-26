@@ -175,29 +175,30 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
 
   // 2. If no invoice items, extract from booking
   if (billSlipItems.length === 0 && booking) {
-    if (booking.hallRentalPrice && Number(booking.hallRentalPrice) > 0) {
+    const bAny = booking as any;
+    if (bAny.hallRentalPrice && Number(bAny.hallRentalPrice) > 0) {
       billSlipItems.push({
         description: `Banquet Hall (${booking.hall?.name || 'Grand Hall'}) - ${booking.eventType || 'Celebration'}`,
-        rate: Number(booking.hallRentalPrice),
-        amount: Number(booking.hallRentalPrice),
+        rate: Number(bAny.hallRentalPrice),
+        amount: Number(bAny.hallRentalPrice),
       });
     }
 
-    if (booking.guestCount && Number(booking.guestCount) > 0 && Number(booking.platePrice) > 0) {
-      const foodAmt = Number(booking.guestCount) * Number(booking.platePrice);
+    if (booking.guestCount && Number(booking.guestCount) > 0 && Number(bAny.platePrice || 0) > 0) {
+      const foodAmt = Number(booking.guestCount) * Number(bAny.platePrice);
       billSlipItems.push({
-        description: `Food Catering (${booking.guestCount} Persons @ ₹${Number(booking.platePrice).toLocaleString('en-IN')}/plate)`,
+        description: `Food Catering (${booking.guestCount} Persons @ ₹${Number(bAny.platePrice).toLocaleString('en-IN')}/plate)`,
         quantity: Number(booking.guestCount),
-        rate: Number(booking.platePrice),
+        rate: Number(bAny.platePrice),
         amount: foodAmt,
       });
     }
 
-    if (booking.extraServicesPrice && Number(booking.extraServicesPrice) > 0) {
+    if (bAny.extraServicesPrice && Number(bAny.extraServicesPrice) > 0) {
       billSlipItems.push({
         description: 'Decoration & Stage Setup Facilities',
-        rate: Number(booking.extraServicesPrice),
-        amount: Number(booking.extraServicesPrice),
+        rate: Number(bAny.extraServicesPrice),
+        amount: Number(bAny.extraServicesPrice),
       });
     }
   }
