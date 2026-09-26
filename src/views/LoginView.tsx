@@ -5,8 +5,8 @@ import { BrandLogo } from '../components/BrandLogo.tsx';
 
 export const LoginView: React.FC = () => {
   const { login } = useAuth();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +71,7 @@ export const LoginView: React.FC = () => {
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
-                    <span>Bandhan Vatika Stage Setup & Stage setup area</span>
+                    <span>Bandhan Vatika Stage Setup &amp; Open Lawn Area</span>
                   </li>
                   <li className="flex items-center space-x-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />

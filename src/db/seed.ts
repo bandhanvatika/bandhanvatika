@@ -36,7 +36,7 @@ export async function seedDatabase() {
         {
           id: 'usr-owner-001',
           email: 'admin@bandhanvatika.com',
-          username: 'rinki_sanjay_sinha',
+          username: 'admin',
           passwordHash,
           name: 'Rinki Sanjay Sinha (Owner)',
           phone: '9876543210',
