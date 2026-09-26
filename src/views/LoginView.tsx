@@ -109,9 +109,9 @@ export const LoginView: React.FC = () => {
         <div className="lg:col-span-6 p-6 sm:p-8 lg:p-12 flex flex-col justify-between bg-white">
           <div>
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-stone-900 font-brand">Staff Sign In</h2>
+              <h2 className="text-2xl font-bold text-stone-900 font-brand">Sign In</h2>
               <p className="text-xs sm:text-sm text-stone-500 mt-1">
-                Enter your credentials to access the venue management console
+                Enter your credentials to access the management portal
               </p>
             </div>
 
