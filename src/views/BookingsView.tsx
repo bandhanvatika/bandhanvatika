@@ -669,6 +669,51 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
               </div>
             </div>
 
+            {/* Venue & Hall Charges */}
+            {(detailBooking.hall || (detailBooking.bookingHalls && detailBooking.bookingHalls.length > 0)) && (
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200">
+                <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-2">
+                  Venue & Hall Rental Charges
+                </span>
+                <div className="space-y-1.5 text-xs">
+                  {detailBooking.bookingHalls && detailBooking.bookingHalls.length > 0 ? (
+                    detailBooking.bookingHalls.map((bh: any, idx: number) => {
+                      const hallInfo = hallsList.find((h) => h.id === bh.hallId) || detailBooking.hall;
+                      return (
+                        <div key={bh.id || idx} className="flex justify-between items-center p-2 rounded-lg bg-white border border-stone-200">
+                          <div>
+                            <span className="font-semibold text-stone-900">
+                              Venue Rental: {hallInfo?.name || 'Primary Hall'}
+                            </span>
+                            <span className="text-[11px] text-stone-500 ml-2">
+                              ({bh.startTime || detailBooking.startTime} - {bh.endTime || detailBooking.endTime})
+                            </span>
+                          </div>
+                          <span className="font-bold text-stone-800">
+                            ₹{Number(bh.price || hallInfo?.basePrice || 0).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : detailBooking.hall ? (
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-stone-200">
+                      <div>
+                        <span className="font-semibold text-stone-900">
+                          Venue Rental: {detailBooking.hall.name}
+                        </span>
+                        <span className="text-[11px] text-stone-500 ml-2">
+                          ({detailBooking.startTime} - {detailBooking.endTime})
+                        </span>
+                      </div>
+                      <span className="font-bold text-stone-800">
+                        ₹{Number(detailBooking.hall.basePrice || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
             {/* Allocated Rooms */}
             {detailBooking.bookingRooms && detailBooking.bookingRooms.length > 0 && (
               <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200">
@@ -721,36 +766,72 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
             )}
 
             {/* Financial Ledger Breakdown */}
-            <div className="p-4 rounded-2xl bg-[#14281D] text-[#FBF9F5] space-y-2">
-              <div className="flex justify-between text-xs text-stone-300">
-                <span>Subtotal</span>
-                <span>₹{Number(detailBooking.subtotal).toLocaleString('en-IN')}</span>
-              </div>
-              {Number(detailBooking.discount) > 0 && (
-                <div className="flex justify-between text-xs text-emerald-400">
-                  <span>Discount</span>
-                  <span>- ₹{Number(detailBooking.discount).toLocaleString('en-IN')}</span>
+            {(() => {
+              const hallTotal = detailBooking.bookingHalls && detailBooking.bookingHalls.length > 0
+                ? detailBooking.bookingHalls.reduce((sum: number, bh: any) => sum + Number(bh.price || 0), 0)
+                : Number(detailBooking.hall?.basePrice || 0);
+              const roomsTotal = detailBooking.bookingRooms && detailBooking.bookingRooms.length > 0
+                ? detailBooking.bookingRooms.reduce((sum: number, br: any) => sum + Number(br.price || 0), 0)
+                : 0;
+              const servicesList = Array.isArray(detailBooking.services)
+                ? detailBooking.services
+                : JSON.parse(detailBooking.services || '[]');
+              const servicesTotal = servicesList.reduce((sum: number, s: any) => sum + Number(s.amount || s.cost || 0), 0);
+
+              return (
+                <div className="p-4 rounded-2xl bg-[#14281D] text-[#FBF9F5] space-y-2">
+                  <span className="text-[10px] font-bold text-[#E2C07D] uppercase tracking-wider block mb-1">
+                    Financial Summary Breakdown
+                  </span>
+                  {hallTotal > 0 && (
+                    <div className="flex justify-between text-xs text-stone-300">
+                      <span>Venue Rental ({detailBooking.hall?.name || 'Hall'})</span>
+                      <span>₹{hallTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {roomsTotal > 0 && (
+                    <div className="flex justify-between text-xs text-stone-300">
+                      <span>Rooms Accommodation ({detailBooking.bookingRooms.length} rooms)</span>
+                      <span>₹{roomsTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {servicesTotal > 0 && (
+                    <div className="flex justify-between text-xs text-stone-300">
+                      <span>Additional Services Total</span>
+                      <span>₹{servicesTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs font-bold text-stone-200 pt-1 border-t border-white/10">
+                    <span>Subtotal</span>
+                    <span>₹{Number(detailBooking.subtotal).toLocaleString('en-IN')}</span>
+                  </div>
+                  {Number(detailBooking.discount) > 0 && (
+                    <div className="flex justify-between text-xs text-emerald-400">
+                      <span>Discount</span>
+                      <span>- ₹{Number(detailBooking.discount).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {Number(detailBooking.taxAmount) > 0 && (
+                    <div className="flex justify-between text-xs text-stone-300">
+                      <span>GST ({detailBooking.taxPercent}%)</span>
+                      <span>+ ₹{Number(detailBooking.taxAmount).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm font-bold text-[#E2C07D] pt-2 border-t border-white/10 font-brand">
+                    <span>Grand Total</span>
+                    <span>₹{Number(detailBooking.grandTotal).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-emerald-300 font-semibold">
+                    <span>Amount Paid</span>
+                    <span>₹{Number(detailBooking.paidAmount).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-rose-300 font-bold">
+                    <span>Balance Due</span>
+                    <span>₹{Number(detailBooking.balanceAmount).toLocaleString('en-IN')}</span>
+                  </div>
                 </div>
-              )}
-              {Number(detailBooking.taxAmount) > 0 && (
-                <div className="flex justify-between text-xs text-stone-300">
-                  <span>GST ({detailBooking.taxPercent}%)</span>
-                  <span>+ ₹{Number(detailBooking.taxAmount).toLocaleString('en-IN')}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm font-bold text-[#E2C07D] pt-2 border-t border-white/10 font-brand">
-                <span>Grand Total</span>
-                <span>₹{Number(detailBooking.grandTotal).toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between text-xs text-emerald-300 font-semibold">
-                <span>Amount Paid</span>
-                <span>₹{Number(detailBooking.paidAmount).toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between text-xs text-rose-300 font-bold">
-                <span>Balance Due</span>
-                <span>₹{Number(detailBooking.balanceAmount).toLocaleString('en-IN')}</span>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Payments List for this booking */}
             {detailBooking.payments && detailBooking.payments.length > 0 && (
