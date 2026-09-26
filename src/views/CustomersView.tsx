@@ -24,6 +24,10 @@ import {
   ChevronRight,
   ShieldCheck,
   Building,
+  Camera,
+  UploadCloud,
+  Trash2,
+  Download,
 } from 'lucide-react';
 
 export interface CustomersViewProps {
@@ -57,6 +61,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
   const [formIdProofType, setFormIdProofType] = useState('Aadhaar Card');
   const [formIdProofNumber, setFormIdProofNumber] = useState('');
   const [formNotes, setFormNotes] = useState('');
+  const [formIdProofImage, setFormIdProofImage] = useState<string | null>(null);
   const [mobileWarning, setMobileWarning] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -70,10 +75,14 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
   const [editCity, setEditCity] = useState('Ara');
   const [editIdProofType, setEditIdProofType] = useState('Aadhaar Card');
   const [editIdProofNumber, setEditIdProofNumber] = useState('');
+  const [editIdProofImage, setEditIdProofImage] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [editMobileWarning, setEditMobileWarning] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+
+  // ID Card Full Image View Modal
+  const [viewIdImageModal, setViewIdImageModal] = useState<{ title: string; image: string; idInfo?: string } | null>(null);
 
   // Profile View Modal State
   const [profileCustomer, setProfileCustomer] = useState<any>(null);
@@ -151,6 +160,38 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
     setSubmitLoading(true);
     setFormError(null);
 
+    const compressImage = (file: File, callback: (base64: string) => void) => {
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.82);
+          callback(compressed);
+        };
+        img.src = uploadEvent.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    };
+
     const res = await apiRequest<Customer>('/customers', {
       method: 'POST',
       body: JSON.stringify({
@@ -161,6 +202,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
         city: formCity || undefined,
         idProofType: formIdProofType || undefined,
         idProofNumber: formIdProofNumber || undefined,
+        idProofImage: formIdProofImage || undefined,
         notes: formNotes || undefined,
       }),
     });
@@ -184,6 +226,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
     setEditCity(c.city || 'Ara');
     setEditIdProofType(c.idProofType || 'Aadhaar Card');
     setEditIdProofNumber(c.idProofNumber || '');
+    setEditIdProofImage(c.idProofImage || null);
     setEditNotes(c.notes || '');
     setEditError(null);
     setEditMobileWarning(null);
@@ -206,6 +249,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
         city: editCity || 'Ara',
         idProofType: editIdProofType || null,
         idProofNumber: editIdProofNumber || null,
+        idProofImage: editIdProofImage || null,
         notes: editNotes || null,
       }),
     });
@@ -255,6 +299,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
     setFormCity('Ara');
     setFormIdProofType('Aadhaar Card');
     setFormIdProofNumber('');
+    setFormIdProofImage(null);
     setFormNotes('');
     setMobileWarning(null);
     setFormError(null);
@@ -375,9 +420,31 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                     <td className="py-3.5 px-3">
                       <div className="font-bold text-stone-900">{c.name}</div>
                       {c.idProofType && c.idProofNumber && (
-                        <div className="text-[10px] text-stone-400 flex items-center space-x-1 mt-0.5">
-                          <ShieldCheck className="w-3 h-3 text-[#C5A059]" />
-                          <span>{c.idProofType}: {c.idProofNumber}</span>
+                        <div className="text-[10px] text-stone-500 flex flex-wrap items-center gap-1.5 mt-1">
+                          <span className="flex items-center space-x-1 text-stone-600">
+                            <ShieldCheck className="w-3 h-3 text-[#C5A059]" />
+                            <span>{c.idProofType}: {c.idProofNumber}</span>
+                          </span>
+                          {c.idProofImage ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewIdImageModal({
+                                  title: `${c.name} - ${c.idProofType} Photo`,
+                                  image: c.idProofImage!,
+                                  idInfo: `${c.idProofType}: ${c.idProofNumber} (Code: ${c.customerCode})`,
+                                });
+                              }}
+                              className="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded font-semibold text-[10px] border border-emerald-200 cursor-pointer transition-all"
+                              title="Click to view full Govt ID Card photo"
+                            >
+                              <Eye className="w-2.5 h-2.5 text-emerald-700" />
+                              <span>View ID Card</span>
+                            </button>
+                          ) : (
+                            <span className="text-[9px] text-stone-400 italic">(Photo not attached)</span>
+                          )}
                         </div>
                       )}
                     </td>
@@ -610,11 +677,11 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                   onChange={(e) => setFormIdProofType(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059]"
                 >
-                  <option value="Aadhaar Card">Aadhaar Card</option>
-                  <option value="PAN Card">PAN Card</option>
-                  <option value="Voter ID">Voter ID</option>
-                  <option value="Driving License">Driving License</option>
-                  <option value="Passport">Passport</option>
+                  <option value="Aadhaar Card">Aadhaar Card (आधार कार्ड)</option>
+                  <option value="PAN Card">PAN Card (पैन कार्ड)</option>
+                  <option value="Voter ID">Voter ID (मतदाता पहचान पत्र)</option>
+                  <option value="Driving License">Driving License (ड्राइविंग लाइसेंस)</option>
+                  <option value="Passport">Passport (पासपोर्ट)</option>
                 </select>
               </div>
 
@@ -629,6 +696,75 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                   onChange={(e) => setFormIdProofNumber(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059] font-mono"
                 />
+              </div>
+            </div>
+
+            {/* ID Proof Image Upload */}
+            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+              <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5 flex items-center space-x-1.5">
+                <Camera className="w-4 h-4 text-[#C5A059]" />
+                <span>Upload ID Card Photo (आधार / पैन / वोटर कार्ड की फ़ोटो)</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="cursor-pointer px-3.5 py-2 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl text-xs font-semibold text-stone-700 flex items-center space-x-2 transition-all shadow-2xs">
+                  <UploadCloud className="w-4 h-4 text-[#C5A059]" />
+                  <span>Choose Photo / Camera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxDim = 1200;
+                            let w = img.width;
+                            let h = img.height;
+                            if (w > h) {
+                              if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                            } else {
+                              if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+                            }
+                            canvas.width = w;
+                            canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx?.drawImage(img, 0, 0, w, h);
+                            setFormIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                          };
+                          img.src = ev.target?.result as string;
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+
+                {formIdProofImage ? (
+                  <div className="flex items-center space-x-2.5">
+                    <img
+                      src={formIdProofImage}
+                      alt="ID Preview"
+                      className="w-14 h-10 object-cover rounded-lg border-2 border-emerald-500 shadow-xs cursor-pointer hover:opacity-90"
+                      onClick={() => setViewIdImageModal({ title: 'New Customer ID Preview', image: formIdProofImage })}
+                      title="Click to preview full size"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormIdProofImage(null)}
+                      className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center space-x-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-stone-400 italic">No photo attached yet</span>
+                )}
               </div>
             </div>
 
@@ -764,11 +900,11 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                   onChange={(e) => setEditIdProofType(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059]"
                 >
-                  <option value="Aadhaar Card">Aadhaar Card</option>
-                  <option value="PAN Card">PAN Card</option>
-                  <option value="Voter ID">Voter ID</option>
-                  <option value="Driving License">Driving License</option>
-                  <option value="Passport">Passport</option>
+                  <option value="Aadhaar Card">Aadhaar Card (आधार कार्ड)</option>
+                  <option value="PAN Card">PAN Card (पैन कार्ड)</option>
+                  <option value="Voter ID">Voter ID (मतदाता पहचान पत्र)</option>
+                  <option value="Driving License">Driving License (ड्राइविंग लाइसेंस)</option>
+                  <option value="Passport">Passport (पासपोर्ट)</option>
                 </select>
               </div>
 
@@ -782,6 +918,75 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                   onChange={(e) => setEditIdProofNumber(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059] font-mono"
                 />
+              </div>
+            </div>
+
+            {/* Edit ID Proof Image Upload */}
+            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+              <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5 flex items-center space-x-1.5">
+                <Camera className="w-4 h-4 text-[#C5A059]" />
+                <span>Upload ID Card Photo (आधार / पैन / वोटर कार्ड की फ़ोटो)</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="cursor-pointer px-3.5 py-2 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl text-xs font-semibold text-stone-700 flex items-center space-x-2 transition-all shadow-2xs">
+                  <UploadCloud className="w-4 h-4 text-[#C5A059]" />
+                  <span>Choose Photo / Camera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxDim = 1200;
+                            let w = img.width;
+                            let h = img.height;
+                            if (w > h) {
+                              if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                            } else {
+                              if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+                            }
+                            canvas.width = w;
+                            canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx?.drawImage(img, 0, 0, w, h);
+                            setEditIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                          };
+                          img.src = ev.target?.result as string;
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+
+                {editIdProofImage ? (
+                  <div className="flex items-center space-x-2.5">
+                    <img
+                      src={editIdProofImage}
+                      alt="ID Preview"
+                      className="w-14 h-10 object-cover rounded-lg border-2 border-emerald-500 shadow-xs cursor-pointer hover:opacity-90"
+                      onClick={() => setViewIdImageModal({ title: `${editName || 'Customer'} ID Preview`, image: editIdProofImage })}
+                      title="Click to preview full size"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditIdProofImage(null)}
+                      className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center space-x-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-stone-400 italic">No photo attached yet</span>
+                )}
               </div>
             </div>
 
@@ -870,6 +1075,20 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                   <p className="font-mono font-bold text-stone-800">
                     {profileCustomer.idProofType ? `${profileCustomer.idProofType}: ${profileCustomer.idProofNumber || 'N/A'}` : 'Not registered'}
                   </p>
+                  {profileCustomer.idProofImage && (
+                    <button
+                      type="button"
+                      onClick={() => setViewIdImageModal({
+                        title: `${profileCustomer.name} - ${profileCustomer.idProofType || 'Govt ID'}`,
+                        image: profileCustomer.idProofImage,
+                        idInfo: `${profileCustomer.idProofType}: ${profileCustomer.idProofNumber} (Code: ${profileCustomer.customerCode})`
+                      })}
+                      className="mt-2 inline-flex items-center space-x-1.5 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold border border-emerald-200 cursor-pointer transition-all"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>View Uploaded ID Photo</span>
+                    </button>
+                  )}
                 </div>
                 {profileCustomer.notes && (
                   <div className="sm:col-span-2">
@@ -971,6 +1190,49 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
               >
                 {actionLoading ? 'Processing...' : confirmTarget.action === 'deactivate' ? 'Confirm Deactivation' : 'Confirm Activation'}
               </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Full-size ID Card Image Preview Modal */}
+      {viewIdImageModal && (
+        <Modal
+          isOpen={!!viewIdImageModal}
+          onClose={() => setViewIdImageModal(null)}
+          title={viewIdImageModal.title}
+          subtitle={viewIdImageModal.idInfo || 'Verified Customer Government ID Card'}
+          maxWidth="2xl"
+        >
+          <div className="space-y-4">
+            <div className="max-h-[75vh] overflow-auto rounded-xl border border-stone-200 bg-stone-900/90 flex items-center justify-center p-2">
+              <img
+                src={viewIdImageModal.image}
+                alt={viewIdImageModal.title}
+                className="max-h-[70vh] w-auto object-contain rounded-lg shadow-2xl"
+              />
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-stone-200">
+              <span className="text-xs text-stone-500 font-medium">
+                Official Document Preview
+              </span>
+              <div className="flex items-center space-x-2">
+                <a
+                  href={viewIdImageModal.image}
+                  download="customer_id_proof.jpg"
+                  className="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold flex items-center space-x-1.5 transition-all"
+                >
+                  <Download className="w-3.5 h-3.5 text-stone-600" />
+                  <span>Download Photo</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setViewIdImageModal(null)}
+                  className="px-4 py-1.5 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </Modal>

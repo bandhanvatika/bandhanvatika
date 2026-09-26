@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api/client.ts';
 import { User, UserRole } from '../types/index.ts';
 import { Modal } from '../components/Modal.tsx';
-import { ShieldCheck, Plus, User as UserIcon, Lock, Phone, Mail, Shield, Edit2, CheckCircle2, XCircle } from 'lucide-react';
+import { ShieldCheck, Plus, User as UserIcon, Lock, Phone, Mail, Shield, Edit2, CheckCircle2, XCircle, Camera, UploadCloud, Eye, Trash2, Download } from 'lucide-react';
 
 export const UsersView: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -17,6 +17,7 @@ export const UsersView: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [idProofType, setIdProofType] = useState('Aadhaar Card');
   const [idProofNumber, setIdProofNumber] = useState('');
+  const [idProofImage, setIdProofImage] = useState<string | null>(null);
   const [role, setRole] = useState<UserRole>('STAFF');
   const [saving, setSaving] = useState(false);
 
@@ -29,7 +30,11 @@ export const UsersView: React.FC = () => {
   const [editPhone, setEditPhone] = useState('');
   const [editIdProofType, setEditIdProofType] = useState('Aadhaar Card');
   const [editIdProofNumber, setEditIdProofNumber] = useState('');
+  const [editIdProofImage, setEditIdProofImage] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+
+  // Staff ID View Modal
+  const [viewStaffIdModal, setViewStaffIdModal] = useState<{ title: string; image: string; info: string } | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -47,7 +52,7 @@ export const UsersView: React.FC = () => {
     setSaving(true);
     const res = await apiRequest('/users', {
       method: 'POST',
-      body: JSON.stringify({ username, password, name, email, phone, role, idProofType, idProofNumber }),
+      body: JSON.stringify({ username, password, name, email, phone, role, idProofType, idProofNumber, idProofImage }),
     });
     setSaving(false);
     if (res.success) {
@@ -59,6 +64,7 @@ export const UsersView: React.FC = () => {
       setPhone('');
       setIdProofType('Aadhaar Card');
       setIdProofNumber('');
+      setIdProofImage(null);
       fetchUsers();
     } else {
       alert(res.error?.message || 'Failed to create staff account');
@@ -73,6 +79,7 @@ export const UsersView: React.FC = () => {
     setEditPhone(u.phone || '');
     setEditIdProofType(u.idProofType || 'Aadhaar Card');
     setEditIdProofNumber(u.idProofNumber || '');
+    setEditIdProofImage(u.idProofImage || null);
     setShowEdit(true);
   };
 
@@ -89,6 +96,7 @@ export const UsersView: React.FC = () => {
         phone: editPhone,
         idProofType: editIdProofType,
         idProofNumber: editIdProofNumber,
+        idProofImage: editIdProofImage,
       }),
     });
     setUpdating(false);
@@ -173,8 +181,27 @@ export const UsersView: React.FC = () => {
                       <div className="font-medium text-stone-800">{u.email}</div>
                       <div className="text-[11px] text-stone-400">{u.phone || '—'}</div>
                       {u.idProofType && u.idProofNumber ? (
-                        <div className="mt-1 inline-flex items-center text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-emerald-200/60">
-                          ✓ {u.idProofType}: {u.idProofNumber}
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <span className="inline-flex items-center text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-emerald-200/60">
+                            ✓ {u.idProofType}: {u.idProofNumber}
+                          </span>
+                          {u.idProofImage ? (
+                            <button
+                              type="button"
+                              onClick={() => setViewStaffIdModal({
+                                title: `${u.name} - ${u.idProofType} Photo`,
+                                image: u.idProofImage!,
+                                info: `Role: ${u.role} · ${u.idProofType}: ${u.idProofNumber}`
+                              })}
+                              className="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded font-bold text-[10px] cursor-pointer transition-all"
+                              title="Click to view staff ID Card photo"
+                            >
+                              <Eye className="w-2.5 h-2.5 text-emerald-800" />
+                              <span>View ID Photo</span>
+                            </button>
+                          ) : (
+                            <span className="text-[9px] text-stone-400 italic">(No ID photo)</span>
+                          )}
                         </div>
                       ) : (
                         <div className="mt-1 inline-flex items-center text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-medium border border-amber-200/60">
@@ -335,6 +362,75 @@ export const UsersView: React.FC = () => {
               />
             </div>
 
+            {/* Staff ID Photo Upload */}
+            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+              <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5 flex items-center space-x-1.5">
+                <Camera className="w-4 h-4 text-[#C5A059]" />
+                <span>Upload Staff ID Card Photo (आधार / पैन की फ़ोटो)</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="cursor-pointer px-3.5 py-2 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl text-xs font-semibold text-stone-700 flex items-center space-x-2 transition-all shadow-2xs">
+                  <UploadCloud className="w-4 h-4 text-[#C5A059]" />
+                  <span>Choose Photo / Camera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxDim = 1200;
+                            let w = img.width;
+                            let h = img.height;
+                            if (w > h) {
+                              if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                            } else {
+                              if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+                            }
+                            canvas.width = w;
+                            canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx?.drawImage(img, 0, 0, w, h);
+                            setIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                          };
+                          img.src = ev.target?.result as string;
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+
+                {idProofImage ? (
+                  <div className="flex items-center space-x-2.5">
+                    <img
+                      src={idProofImage}
+                      alt="Staff ID Preview"
+                      className="w-14 h-10 object-cover rounded-lg border-2 border-emerald-500 shadow-xs cursor-pointer hover:opacity-90"
+                      onClick={() => setViewStaffIdModal({ title: `${name || 'Staff'} ID Preview`, image: idProofImage, info: `${idProofType}: ${idProofNumber}` })}
+                      title="Click to preview full size"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIdProofImage(null)}
+                      className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center space-x-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-stone-400 italic">No photo attached yet</span>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-end space-x-2 pt-3 border-t border-stone-200">
               <button
                 type="button"
@@ -446,6 +542,75 @@ export const UsersView: React.FC = () => {
               />
             </div>
 
+            {/* Edit Staff ID Photo Upload */}
+            <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+              <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5 flex items-center space-x-1.5">
+                <Camera className="w-4 h-4 text-[#C5A059]" />
+                <span>Upload Staff ID Card Photo (आधार / पैन की फ़ोटो)</span>
+              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="cursor-pointer px-3.5 py-2 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl text-xs font-semibold text-stone-700 flex items-center space-x-2 transition-all shadow-2xs">
+                  <UploadCloud className="w-4 h-4 text-[#C5A059]" />
+                  <span>Choose Photo / Camera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxDim = 1200;
+                            let w = img.width;
+                            let h = img.height;
+                            if (w > h) {
+                              if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                            } else {
+                              if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+                            }
+                            canvas.width = w;
+                            canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx?.drawImage(img, 0, 0, w, h);
+                            setEditIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                          };
+                          img.src = ev.target?.result as string;
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+
+                {editIdProofImage ? (
+                  <div className="flex items-center space-x-2.5">
+                    <img
+                      src={editIdProofImage}
+                      alt="Staff ID Preview"
+                      className="w-14 h-10 object-cover rounded-lg border-2 border-emerald-500 shadow-xs cursor-pointer hover:opacity-90"
+                      onClick={() => setViewStaffIdModal({ title: `${editName || 'Staff'} ID Preview`, image: editIdProofImage, info: `${editIdProofType}: ${editIdProofNumber}` })}
+                      title="Click to preview full size"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditIdProofImage(null)}
+                      className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center space-x-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-stone-400 italic">No photo attached yet</span>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-end space-x-2 pt-3 border-t border-stone-200">
               <button
                 type="button"
@@ -466,6 +631,49 @@ export const UsersView: React.FC = () => {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Staff ID Full Photo Modal */}
+      {viewStaffIdModal && (
+        <Modal
+          isOpen={!!viewStaffIdModal}
+          onClose={() => setViewStaffIdModal(null)}
+          title={viewStaffIdModal.title}
+          subtitle={viewStaffIdModal.info}
+          maxWidth="2xl"
+        >
+          <div className="space-y-4">
+            <div className="max-h-[75vh] overflow-auto rounded-xl border border-stone-200 bg-stone-900/90 flex items-center justify-center p-2">
+              <img
+                src={viewStaffIdModal.image}
+                alt={viewStaffIdModal.title}
+                className="max-h-[70vh] w-auto object-contain rounded-lg shadow-2xl"
+              />
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-stone-200">
+              <span className="text-xs text-stone-500 font-medium">
+                Verified Staff Identity Document
+              </span>
+              <div className="flex items-center space-x-2">
+                <a
+                  href={viewStaffIdModal.image}
+                  download="staff_id_proof.jpg"
+                  className="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold flex items-center space-x-1.5 transition-all"
+                >
+                  <Download className="w-3.5 h-3.5 text-stone-600" />
+                  <span>Download Photo</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setViewStaffIdModal(null)}
+                  className="px-4 py-1.5 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

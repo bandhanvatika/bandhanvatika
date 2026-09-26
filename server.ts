@@ -509,7 +509,7 @@ app.get('/api/v1/customers/:id', authenticate, async (req: AuthenticatedRequest,
 // POST /api/v1/customers — Create customer with server-side validation & duplicate protection
 app.post('/api/v1/customers', authenticate, requireRoles(['OWNER', 'MANAGER', 'RECEPTIONIST']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, mobile, email, address, city, idProofType, idProofNumber, notes } = req.body;
+    const { name, mobile, email, address, city, idProofType, idProofNumber, idProofImage, notes } = req.body;
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
       return res.status(400).json({
         success: false,
@@ -574,6 +574,7 @@ app.post('/api/v1/customers', authenticate, requireRoles(['OWNER', 'MANAGER', 'R
         city: city ? city.trim() : 'Ara',
         idProofType: idProofType ? idProofType.trim() : null,
         idProofNumber: idProofNumber ? idProofNumber.trim() : null,
+        idProofImage: idProofImage || null,
         notes: notes ? notes.trim() : null,
         isActive: true,
       })
@@ -609,7 +610,7 @@ app.put('/api/v1/customers/:id', authenticate, requireRoles(['OWNER', 'MANAGER',
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Customer not found.' } });
     }
 
-    const { name, mobile, email, address, city, idProofType, idProofNumber, notes } = req.body;
+    const { name, mobile, email, address, city, idProofType, idProofNumber, idProofImage, notes } = req.body;
 
     if (name !== undefined) {
       if (typeof name !== 'string' || name.trim().length < 2) {
@@ -668,6 +669,7 @@ app.put('/api/v1/customers/:id', authenticate, requireRoles(['OWNER', 'MANAGER',
         city: city !== undefined ? (city ? city.trim() : 'Ara') : existing.city,
         idProofType: idProofType !== undefined ? (idProofType ? idProofType.trim() : null) : existing.idProofType,
         idProofNumber: idProofNumber !== undefined ? (idProofNumber ? idProofNumber.trim() : null) : existing.idProofNumber,
+        idProofImage: idProofImage !== undefined ? idProofImage : existing.idProofImage,
         notes: notes !== undefined ? (notes ? notes.trim() : null) : existing.notes,
         updatedAt: new Date(),
       })
@@ -5382,6 +5384,7 @@ app.get('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Auth
         phone: users.phone,
         idProofType: users.idProofType,
         idProofNumber: users.idProofNumber,
+        idProofImage: users.idProofImage,
         role: users.role,
         status: users.status,
         lastLoginAt: users.lastLoginAt,
@@ -5397,7 +5400,7 @@ app.get('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Auth
 
 app.post('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, email, username, password, role, phone, idProofType, idProofNumber } = req.body;
+    const { name, email, username, password, role, phone, idProofType, idProofNumber, idProofImage } = req.body;
     if (!name || !email || !username || !password || !role) {
       return res.status(400).json({
         success: false,
@@ -5434,6 +5437,7 @@ app.post('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Aut
         phone: phone ? phone.trim() : null,
         idProofType: idProofType ? idProofType.trim() : null,
         idProofNumber: idProofNumber ? idProofNumber.trim() : null,
+        idProofImage: idProofImage || null,
         role,
         status: 'ACTIVE',
       })
@@ -5446,6 +5450,7 @@ app.post('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Aut
         phone: users.phone,
         idProofType: users.idProofType,
         idProofNumber: users.idProofNumber,
+        idProofImage: users.idProofImage,
         status: users.status,
       });
 
@@ -5467,7 +5472,7 @@ app.post('/api/v1/users', authenticate, requireRoles(['OWNER']), async (req: Aut
 
 app.put('/api/v1/users/:id', authenticate, requireRoles(['OWNER']), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, role, status, phone, idProofType, idProofNumber } = req.body;
+    const { name, role, status, phone, idProofType, idProofNumber, idProofImage } = req.body;
     const [updated] = await db
       .update(users)
       .set({
@@ -5477,6 +5482,7 @@ app.put('/api/v1/users/:id', authenticate, requireRoles(['OWNER']), async (req: 
         phone,
         idProofType: idProofType !== undefined ? (idProofType ? idProofType.trim() : null) : undefined,
         idProofNumber: idProofNumber !== undefined ? (idProofNumber ? idProofNumber.trim() : null) : undefined,
+        idProofImage: idProofImage !== undefined ? idProofImage : undefined,
         updatedAt: new Date(),
       })
       .where(eq(users.id, req.params.id))
@@ -5489,6 +5495,7 @@ app.put('/api/v1/users/:id', authenticate, requireRoles(['OWNER']), async (req: 
         phone: users.phone,
         idProofType: users.idProofType,
         idProofNumber: users.idProofNumber,
+        idProofImage: users.idProofImage,
         status: users.status,
       });
 

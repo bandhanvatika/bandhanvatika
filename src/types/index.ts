@@ -9,6 +9,7 @@ export interface User {
   phone?: string | null;
   idProofType?: string | null;
   idProofNumber?: string | null;
+  idProofImage?: string | null;
   status: 'ACTIVE' | 'INACTIVE';
   lastLoginAt?: string | null;
 }
@@ -23,6 +24,7 @@ export interface Customer {
   city?: string | null;
   idProofType?: string | null;
   idProofNumber?: string | null;
+  idProofImage?: string | null;
   notes?: string | null;
   isActive: boolean;
   totalBookings: number;

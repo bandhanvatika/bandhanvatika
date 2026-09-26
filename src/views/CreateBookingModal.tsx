@@ -19,6 +19,9 @@ import {
   Sparkles,
   Search,
   Check,
+  Camera,
+  UploadCloud,
+  Eye,
 } from 'lucide-react';
 
 interface CreateBookingModalProps {
@@ -62,6 +65,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const [newCustCity, setNewCustCity] = useState('Ara');
   const [newCustIdProofType, setNewCustIdProofType] = useState('Aadhaar Card');
   const [newCustIdProofNumber, setNewCustIdProofNumber] = useState('');
+  const [newCustIdProofImage, setNewCustIdProofImage] = useState<string | null>(null);
   const [mobileConflictWarning, setMobileConflictWarning] = useState<string | null>(null);
 
   // Step 2: Event Details (Asia/Kolkata Business Context)
@@ -376,6 +380,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           city: newCustCity.trim() || 'Ara',
           idProofType: newCustIdProofType || undefined,
           idProofNumber: newCustIdProofNumber.trim() || undefined,
+          idProofImage: newCustIdProofImage || undefined,
         }),
       });
       if (!cRes.success || !cRes.data) {
@@ -546,8 +551,9 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                           <div className="text-[11px] text-stone-500 flex flex-wrap items-center gap-1.5 mt-0.5">
                             <span>{c.mobile} · {c.city || 'Ara'}</span>
                             {c.idProofType && c.idProofNumber ? (
-                              <span className="inline-flex items-center text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-emerald-200/60">
-                                ✓ {c.idProofType}: {c.idProofNumber}
+                              <span className="inline-flex items-center space-x-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-emerald-200/60">
+                                <span>✓ {c.idProofType}: {c.idProofNumber}</span>
+                                {c.idProofImage && <span className="text-[9px] bg-emerald-200/70 px-1 rounded text-emerald-900 font-bold">Photo Attached</span>}
                               </span>
                             ) : (
                               <span className="inline-flex items-center text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-medium border border-amber-200/60">
@@ -667,6 +673,73 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                   onChange={(e) => setNewCustIdProofNumber(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059]"
                 />
+              </div>
+
+              {/* ID Proof Photo Upload */}
+              <div className="sm:col-span-2 p-3 bg-stone-50 rounded-xl border border-stone-200">
+                <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5 flex items-center space-x-1.5">
+                  <Camera className="w-4 h-4 text-[#C5A059]" />
+                  <span>Attach ID Card Photo (आधार / पैन / वोटर कार्ड की फ़ोटो)</span>
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="cursor-pointer px-3.5 py-2 bg-white hover:bg-stone-100 border border-stone-300 rounded-xl text-xs font-semibold text-stone-700 flex items-center space-x-2 transition-all shadow-2xs">
+                    <UploadCloud className="w-4 h-4 text-[#C5A059]" />
+                    <span>Choose Photo / Camera</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const img = new Image();
+                            img.onload = () => {
+                              const canvas = document.createElement('canvas');
+                              const maxDim = 1200;
+                              let w = img.width;
+                              let h = img.height;
+                              if (w > h) {
+                                if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                              } else {
+                                if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+                              }
+                              canvas.width = w;
+                              canvas.height = h;
+                              const ctx = canvas.getContext('2d');
+                              ctx?.drawImage(img, 0, 0, w, h);
+                              setNewCustIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                            };
+                            img.src = ev.target?.result as string;
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+
+                  {newCustIdProofImage ? (
+                    <div className="flex items-center space-x-2.5">
+                      <img
+                        src={newCustIdProofImage}
+                        alt="ID Preview"
+                        className="w-14 h-10 object-cover rounded-lg border-2 border-emerald-500 shadow-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewCustIdProofImage(null)}
+                        className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center space-x-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Remove</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[11px] text-stone-400 italic">No ID photo selected</span>
+                  )}
+                </div>
               </div>
             </div>
           )}

@@ -9,6 +9,7 @@ export const users = pgTable('users', {
   phone: varchar('phone', { length: 50 }),
   idProofType: varchar('id_proof_type', { length: 50 }),
   idProofNumber: varchar('id_proof_number', { length: 100 }),
+  idProofImage: text('id_proof_image'),
   role: varchar('role', { length: 50 }).notNull().default('STAFF'), // OWNER, MANAGER, ACCOUNTANT, RECEPTIONIST, STAFF
   status: varchar('status', { length: 50 }).notNull().default('ACTIVE'), // ACTIVE, INACTIVE
   lastLoginAt: timestamp('last_login_at'),
@@ -26,6 +27,7 @@ export const customers = pgTable('customers', {
   city: varchar('city', { length: 100 }),
   idProofType: varchar('id_proof_type', { length: 50 }),
   idProofNumber: varchar('id_proof_number', { length: 100 }),
+  idProofImage: text('id_proof_image'),
   notes: text('notes'),
   isActive: boolean('is_active').default(true).notNull(),
   totalBookings: integer('total_bookings').default(0).notNull(),
