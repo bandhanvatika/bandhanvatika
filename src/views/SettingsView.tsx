@@ -136,13 +136,15 @@ export const SettingsView: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Contact Phone</label>
+              <label className="block text-xs font-bold text-stone-700 uppercase mb-1">Contact Phone Numbers</label>
               <input
                 type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                placeholder="9431086933, 8409480911, 9015755799"
                 className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none"
               />
+              <p className="text-[11px] text-stone-500 mt-1">Bandhan Vatika: 9431086933, 8409480911, 9015755799</p>
             </div>
 
             <div>

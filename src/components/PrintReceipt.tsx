@@ -163,13 +163,13 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
 
   const biz = propData?.bandhanVatika || {
     businessName: settings?.businessName || 'Bandhan Vatika',
-    tagline: settings?.tagline || 'Celebrations · Together · Always',
-    address: settings?.address || 'Bypass Road, Near Emerald Club, Indore, MP 452010',
-    phone: settings?.phone || '+91 98260 12345 / 0731-2490000',
-    email: settings?.email || 'billing@bandhanvatika.com',
-    gstin: settings?.gstin || '23AABCB1234F1Z0',
+    tagline: settings?.tagline || 'A Complete Venue for Your Celebration',
+    address: settings?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)',
+    phone: settings?.phone || '9431086933, 8409480911, 9015755799',
+    email: settings?.email || 'contact@bandhanvatika.com',
+    gstin: settings?.gstin || '23AAAAA0000A1Z5',
     bankName: settings?.bankName || 'HDFC Bank',
-    accountNumber: settings?.accountNumber || '50200088991234',
+    accountNumber: settings?.accountNumber || '50200012345678',
     ifscCode: settings?.ifscCode || 'HDFC0001234',
   };
 
@@ -302,7 +302,7 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
             )}
             {customer?.address && (
               <div className="text-stone-600 text-[11px] leading-tight">
-                <span className="text-stone-400">Address:</span> {customer.address}, {customer.city || 'Indore'}
+                <span className="text-stone-400">Address:</span> {customer.address}, {customer.city || 'Ara'}
               </div>
             )}
             {customer?.customerCode && (
@@ -534,9 +534,11 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
               Terms & Important Conditions:
             </span>
             <ul className="list-disc list-inside space-y-0.5 text-stone-600">
-              <li>All payments are subject to realization of Cheque / RTGS / UPI settlement.</li>
-              <li>Booking advances are non-refundable in event of client cancellation within 30 days.</li>
-              <li>Final settlement must be completed prior to commencement of banquet event.</li>
+              <li>निश्चित समय/दिन पर उत्सव भवन की आवश्यकता न रहने पर एडवांस वापस नहीं होगा।</li>
+              <li>तय सट्टा का एक तिहाई (1/3) एडवांस देय होगा।</li>
+              <li>उत्सव भवन में साफ-सफाई एवं सामान के टूटने-फूटने की जिम्मेवारी ग्राहक की होगी।</li>
+              <li>इन्ट्री से 5 दिन पहले पूरी रकम चुकता करना अनिवार्य है।</li>
+              <li>सभी तरह की गाड़ियां भाड़े पर उचित मूल्य पर उपलब्ध हैं।</li>
             </ul>
           </div>
 

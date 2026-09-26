@@ -571,7 +571,7 @@ app.post('/api/v1/customers', authenticate, requireRoles(['OWNER', 'MANAGER', 'R
         mobile: cleanMobile,
         email: email ? email.trim() : null,
         address: address ? address.trim() : null,
-        city: city ? city.trim() : 'Indore',
+        city: city ? city.trim() : 'Ara',
         idProofType: idProofType ? idProofType.trim() : null,
         idProofNumber: idProofNumber ? idProofNumber.trim() : null,
         notes: notes ? notes.trim() : null,
@@ -665,7 +665,7 @@ app.put('/api/v1/customers/:id', authenticate, requireRoles(['OWNER', 'MANAGER',
         mobile: cleanMobile,
         email: email !== undefined ? (email ? email.trim() : null) : existing.email,
         address: address !== undefined ? (address ? address.trim() : null) : existing.address,
-        city: city !== undefined ? (city ? city.trim() : 'Indore') : existing.city,
+        city: city !== undefined ? (city ? city.trim() : 'Ara') : existing.city,
         idProofType: idProofType !== undefined ? (idProofType ? idProofType.trim() : null) : existing.idProofType,
         idProofNumber: idProofNumber !== undefined ? (idProofNumber ? idProofNumber.trim() : null) : existing.idProofNumber,
         notes: notes !== undefined ? (notes ? notes.trim() : null) : existing.notes,
@@ -3424,9 +3424,9 @@ async function generateInvoiceNumber(tx: any): Promise<string> {
 function buildInvoiceSnapshot(settingRow: any, cust: any, taxPercent: number) {
   return JSON.stringify({
     businessName: settingRow?.businessName || 'Bandhan Vatika',
-    tagline: settingRow?.tagline || 'Celebrations · Together · Always',
-    address: settingRow?.address || '123, MG Road, Indore, MP 452001',
-    phone: settingRow?.phone || '9876543210',
+    tagline: settingRow?.tagline || 'A Complete Venue for Your Celebration',
+    address: settingRow?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)',
+    phone: settingRow?.phone || '9431086933, 8409480911, 9015755799',
     email: settingRow?.email || 'contact@bandhanvatika.com',
     gstin: settingRow?.gstin || '23AAAAA0000A1Z5',
     bankName: settingRow?.bankName || 'HDFC Bank',
@@ -3664,9 +3664,9 @@ app.get('/api/v1/invoices/:id/print', authenticate, async (req: AuthenticatedReq
 
     // Historical snapshot takes precedence for financial document immutability
     const businessName = parsedSnapshot.businessName || s?.businessName || 'Bandhan Vatika';
-    const businessAddress = parsedSnapshot.address || s?.address || '123, MG Road, Indore, MP 452001';
+    const businessAddress = parsedSnapshot.address || s?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)';
     const businessGstin = parsedSnapshot.gstin || s?.gstin || '23AAAAA0000A1Z5';
-    const businessPhone = parsedSnapshot.phone || s?.phone || '9876543210';
+    const businessPhone = parsedSnapshot.phone || s?.phone || '9431086933, 8409480911, 9015755799';
     const businessEmail = parsedSnapshot.email || s?.email || 'contact@bandhanvatika.com';
     const bankDetails = {
       bankName: parsedSnapshot.bankName || s?.bankName || 'HDFC Bank',
@@ -4690,13 +4690,13 @@ app.get('/api/v1/payments/:id/receipt', authenticate, async (req: AuthenticatedR
       data: {
         bandhanVatika: {
           businessName: propSettings?.businessName || 'Bandhan Vatika',
-          tagline: propSettings?.tagline || 'Celebrations · Together · Always',
-          address: propSettings?.address || 'Bypass Road, Indore, MP',
-          phone: propSettings?.phone || '+91 98260 12345',
+          tagline: propSettings?.tagline || 'A Complete Venue for Your Celebration',
+          address: propSettings?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)',
+          phone: propSettings?.phone || '9431086933, 8409480911, 9015755799',
           email: propSettings?.email || 'contact@bandhanvatika.com',
-          gstin: propSettings?.gstin || '23AABCB1234F1Z0',
+          gstin: propSettings?.gstin || '23AAAAA0000A1Z5',
           bankName: propSettings?.bankName || 'HDFC Bank',
-          accountNumber: propSettings?.accountNumber || '50200088991234',
+          accountNumber: propSettings?.accountNumber || '50200012345678',
           ifscCode: propSettings?.ifscCode || 'HDFC0001234',
         },
         receiptNumber: p.receiptNumber,
@@ -5517,9 +5517,9 @@ app.get('/api/v1/settings', authenticate, async (req: AuthenticatedRequest, res:
         .values({
           id: 'default',
           businessName: 'Bandhan Vatika',
-          tagline: 'Celebrations · Together · Always',
-          address: '123, MG Road, Indore, MP 452001',
-          phone: '9876543210',
+          tagline: 'A Complete Venue for Your Celebration',
+          address: 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)',
+          phone: '9431086933, 8409480911, 9015755799',
           email: 'contact@bandhanvatika.com',
           gstin: '23AAAAA0000A1Z5',
           defaultTaxPercent: '18.00',

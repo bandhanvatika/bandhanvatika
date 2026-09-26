@@ -412,10 +412,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                 <div className="space-y-1">
                   <BrandLogo variant="print" />
                   <p className="text-xs text-stone-600 max-w-sm pt-1">
-                    {(activeInvoice as any).parsedSnapshot?.address || settings?.address || 'Ara-Buxar Main Road, Bihar'}
+                    {(activeInvoice as any).parsedSnapshot?.address || settings?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)'}
                   </p>
                   <p className="text-xs font-semibold text-stone-700">
-                    Phone: {(activeInvoice as any).parsedSnapshot?.phone || settings?.phone || '+91 9876543210'} | Email: {(activeInvoice as any).parsedSnapshot?.email || settings?.email || 'contact@bandhanvatika.com'}
+                    Phone: {(activeInvoice as any).parsedSnapshot?.phone || settings?.phone || '9431086933, 8409480911, 9015755799'} | Email: {(activeInvoice as any).parsedSnapshot?.email || settings?.email || 'contact@bandhanvatika.com'}
                   </p>
                   <p className="text-xs font-mono font-bold text-[#14281D]">
                     GSTIN: {(activeInvoice as any).parsedSnapshot?.gstin || settings?.gstin || '10AAAAA0000A1Z5'}

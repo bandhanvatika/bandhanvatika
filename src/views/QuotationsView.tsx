@@ -1266,11 +1266,11 @@ export const QuotationsView: React.FC<QuotationsViewProps> = ({ searchQuery = ''
                 <div>
                   <BrandLogo variant="print" />
                   <p className="text-xs text-stone-500 mt-2">
-                    {viewQuotation.settings?.address || 'Ara-Buxar Main Road, Bihar'}
+                    {viewQuotation.settings?.address || 'आरा-बक्सर मेन रोड, पकड़ीयावर, आर० के० ऐकेडमी स्कूल के ठीक सामने, चन्दवाँ, आरा (बिहार)'}
                   </p>
                   <p className="text-xs text-stone-500">
                     GSTIN: <span className="font-mono font-semibold">{viewQuotation.settings?.gstin || '10AAAAA0000A1Z5'}</span>
-                    {' · '}Phone: {viewQuotation.settings?.phone || '9876543210'}
+                    {' · '}Phone: {viewQuotation.settings?.phone || '9431086933, 8409480911, 9015755799'}
                   </p>
                 </div>
                 <div className="text-right space-y-1">
