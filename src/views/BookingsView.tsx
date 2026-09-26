@@ -653,7 +653,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                   <p className="text-xs text-stone-600">Email: {detailBooking.customer?.email}</p>
                 )}
                 <p className="text-xs text-stone-500">
-                  Address: {detailBooking.customer?.address || 'Indore'}, {detailBooking.customer?.city || 'MP'}
+                  Address: {detailBooking.customer?.address || 'Ara'}, {detailBooking.customer?.city || 'Bihar'}
                 </p>
               </div>
 

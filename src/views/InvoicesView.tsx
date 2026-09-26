@@ -412,13 +412,13 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                 <div className="space-y-1">
                   <BrandLogo variant="print" />
                   <p className="text-xs text-stone-600 max-w-sm pt-1">
-                    {(activeInvoice as any).parsedSnapshot?.address || settings?.address || '123, MG Road, Indore, MP 452001'}
+                    {(activeInvoice as any).parsedSnapshot?.address || settings?.address || 'Ara-Buxar Main Road, Bihar'}
                   </p>
                   <p className="text-xs font-semibold text-stone-700">
                     Phone: {(activeInvoice as any).parsedSnapshot?.phone || settings?.phone || '+91 9876543210'} | Email: {(activeInvoice as any).parsedSnapshot?.email || settings?.email || 'contact@bandhanvatika.com'}
                   </p>
                   <p className="text-xs font-mono font-bold text-[#14281D]">
-                    GSTIN: {(activeInvoice as any).parsedSnapshot?.gstin || settings?.gstin || '23AAAAA0000A1Z5'}
+                    GSTIN: {(activeInvoice as any).parsedSnapshot?.gstin || settings?.gstin || '10AAAAA0000A1Z5'}
                   </p>
                 </div>
 
@@ -454,7 +454,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                     {(activeInvoice as any).parsedSnapshot?.customerMobile || activeInvoice.customer?.mobile}
                   </p>
                   <p className="text-stone-500">
-                    {(activeInvoice as any).parsedSnapshot?.customerAddress || activeInvoice.customer?.address || 'Indore, MP'}
+                    {(activeInvoice as any).parsedSnapshot?.customerAddress || activeInvoice.customer?.address || 'Ara, Bihar'}
                   </p>
                   <p className="text-stone-500 font-mono text-[11px] mt-0.5">
                     GSTIN: {(activeInvoice as any).parsedSnapshot?.customerGstin || (activeInvoice.customer as any)?.gstin || 'URP (Unregistered)'}
@@ -594,7 +594,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                 <div className="text-center sm:text-right">
                   <div className="h-10 border-b border-stone-400 w-40 mb-1" />
                   <p className="font-bold text-stone-800">Authorized Signatory</p>
-                  <p>Bandhan Vatika Indore</p>
+                  <p>{settings?.businessName || 'Bandhan Vatika'}</p>
                 </div>
               </div>
             </div>

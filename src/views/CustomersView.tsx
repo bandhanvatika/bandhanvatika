@@ -53,7 +53,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
   const [formMobile, setFormMobile] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formAddress, setFormAddress] = useState('');
-  const [formCity, setFormCity] = useState('Indore');
+  const [formCity, setFormCity] = useState('Ara');
   const [formIdProofType, setFormIdProofType] = useState('Aadhaar Card');
   const [formIdProofNumber, setFormIdProofNumber] = useState('');
   const [formNotes, setFormNotes] = useState('');
@@ -67,7 +67,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
   const [editMobile, setEditMobile] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editAddress, setEditAddress] = useState('');
-  const [editCity, setEditCity] = useState('Indore');
+  const [editCity, setEditCity] = useState('Ara');
   const [editIdProofType, setEditIdProofType] = useState('Aadhaar Card');
   const [editIdProofNumber, setEditIdProofNumber] = useState('');
   const [editNotes, setEditNotes] = useState('');
@@ -181,7 +181,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
     setEditMobile(c.mobile);
     setEditEmail(c.email || '');
     setEditAddress(c.address || '');
-    setEditCity(c.city || 'Indore');
+    setEditCity(c.city || 'Ara');
     setEditIdProofType(c.idProofType || 'Aadhaar Card');
     setEditIdProofNumber(c.idProofNumber || '');
     setEditNotes(c.notes || '');
@@ -203,7 +203,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
         mobile: editMobile,
         email: editEmail || null,
         address: editAddress || null,
-        city: editCity || 'Indore',
+        city: editCity || 'Ara',
         idProofType: editIdProofType || null,
         idProofNumber: editIdProofNumber || null,
         notes: editNotes || null,
@@ -252,7 +252,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
     setFormMobile('');
     setFormEmail('');
     setFormAddress('');
-    setFormCity('Indore');
+    setFormCity('Ara');
     setFormIdProofType('Aadhaar Card');
     setFormIdProofNumber('');
     setFormNotes('');
@@ -394,7 +394,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                       )}
                     </td>
                     <td className="py-3.5 px-3 text-stone-700">
-                      <div className="font-medium">{c.city || 'Indore'}</div>
+                      <div className="font-medium">{c.city || 'Ara'}</div>
                       {c.address && (
                         <div className="text-[11px] text-stone-400 truncate max-w-[200px]">
                           {c.address}
@@ -579,7 +579,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Indore"
+                  placeholder="e.g. Ara"
                   value={formCity}
                   onChange={(e) => setFormCity(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059]"
@@ -862,7 +862,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                 <div>
                   <span className="text-stone-400 font-medium">City & Address:</span>
                   <p className="font-medium text-stone-800">
-                    {profileCustomer.address ? `${profileCustomer.address}, ` : ''}{profileCustomer.city || 'Indore'}
+                    {profileCustomer.address ? `${profileCustomer.address}, ` : ''}{profileCustomer.city || 'Ara'}
                   </p>
                 </div>
                 <div>

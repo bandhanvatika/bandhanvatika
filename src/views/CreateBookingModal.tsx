@@ -59,7 +59,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const [newCustMobile, setNewCustMobile] = useState('');
   const [newCustEmail, setNewCustEmail] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
-  const [newCustCity, setNewCustCity] = useState('Indore');
+  const [newCustCity, setNewCustCity] = useState('Ara');
   const [newCustIdProofType, setNewCustIdProofType] = useState('Aadhaar Card');
   const [newCustIdProofNumber, setNewCustIdProofNumber] = useState('');
   const [mobileConflictWarning, setMobileConflictWarning] = useState<string | null>(null);
@@ -373,7 +373,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           mobile: newCustMobile.trim(),
           email: newCustEmail.trim() || undefined,
           address: newCustAddress.trim() || undefined,
-          city: newCustCity.trim() || 'Indore',
+          city: newCustCity.trim() || 'Ara',
           idProofType: newCustIdProofType || undefined,
           idProofNumber: newCustIdProofNumber.trim() || undefined,
         }),
@@ -544,7 +544,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                         <div>
                           <div className="font-bold text-xs text-stone-900">{c.name}</div>
                           <div className="text-[11px] text-stone-500 flex flex-wrap items-center gap-1.5 mt-0.5">
-                            <span>{c.mobile} · {c.city || 'Indore'}</span>
+                            <span>{c.mobile} · {c.city || 'Ara'}</span>
                             {c.idProofType && c.idProofNumber ? (
                               <span className="inline-flex items-center text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-emerald-200/60">
                                 ✓ {c.idProofType}: {c.idProofNumber}
@@ -619,7 +619,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Indore"
+                  placeholder="Ara"
                   value={newCustCity}
                   onChange={(e) => setNewCustCity(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059]"
@@ -632,7 +632,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="MG Road, Indore"
+                  placeholder="Ara-Buxar Road, Ara"
                   value={newCustAddress}
                   onChange={(e) => setNewCustAddress(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs outline-none focus:border-[#C5A059]"
