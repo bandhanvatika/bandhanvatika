@@ -698,7 +698,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                             const img = new Image();
                             img.onload = () => {
                               const canvas = document.createElement('canvas');
-                              const maxDim = 1200;
+                              const maxDim = 900;
                               let w = img.width;
                               let h = img.height;
                               if (w > h) {
@@ -710,7 +710,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                               canvas.height = h;
                               const ctx = canvas.getContext('2d');
                               ctx?.drawImage(img, 0, 0, w, h);
-                              setNewCustIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                              setNewCustIdProofImage(canvas.toDataURL('image/jpeg', 0.72));
                             };
                             img.src = ev.target?.result as string;
                           };

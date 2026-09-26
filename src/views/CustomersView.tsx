@@ -160,38 +160,6 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
     setSubmitLoading(true);
     setFormError(null);
 
-    const compressImage = (file: File, callback: (base64: string) => void) => {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const maxDim = 1200;
-          let width = img.width;
-          let height = img.height;
-          if (width > height) {
-            if (width > maxDim) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            }
-          } else {
-            if (height > maxDim) {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.82);
-          callback(compressed);
-        };
-        img.src = uploadEvent.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    };
-
     const res = await apiRequest<Customer>('/customers', {
       method: 'POST',
       body: JSON.stringify({
@@ -722,7 +690,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                           const img = new Image();
                           img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const maxDim = 1200;
+                            const maxDim = 900;
                             let w = img.width;
                             let h = img.height;
                             if (w > h) {
@@ -734,7 +702,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                             canvas.height = h;
                             const ctx = canvas.getContext('2d');
                             ctx?.drawImage(img, 0, 0, w, h);
-                            setFormIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                            setFormIdProofImage(canvas.toDataURL('image/jpeg', 0.72));
                           };
                           img.src = ev.target?.result as string;
                         };
@@ -944,7 +912,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                           const img = new Image();
                           img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const maxDim = 1200;
+                            const maxDim = 900;
                             let w = img.width;
                             let h = img.height;
                             if (w > h) {
@@ -956,7 +924,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ searchQuery = '' }
                             canvas.height = h;
                             const ctx = canvas.getContext('2d');
                             ctx?.drawImage(img, 0, 0, w, h);
-                            setEditIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                            setEditIdProofImage(canvas.toDataURL('image/jpeg', 0.72));
                           };
                           img.src = ev.target?.result as string;
                         };

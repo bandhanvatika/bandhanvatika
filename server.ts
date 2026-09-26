@@ -41,7 +41,25 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Middleware to catch any payload-too-large or body-parser malformed JSON errors as JSON
+app.use((err: any, req: Request, res: Response, next: any) => {
+  if (err && (err.type === 'entity.too.large' || err.status === 413)) {
+    return res.status(413).json({
+      success: false,
+      error: { code: 'PAYLOAD_TOO_LARGE', message: 'Uploaded file is too large for the server. Please upload an image under 10MB.' },
+    });
+  }
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'BAD_REQUEST', message: 'Malformed JSON payload.' },
+    });
+  }
+  next(err);
+});
 
 // Health Check Endpoint
 app.get('/api/v1/health', (req: Request, res: Response) => {

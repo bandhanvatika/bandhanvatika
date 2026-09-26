@@ -20,24 +20,54 @@ export async function apiRequest<T = any>(
       headers,
     });
 
-    const data = await res.json();
+    const contentType = res.headers.get('content-type') || '';
+    let data: any = null;
+
+    if (contentType.includes('application/json')) {
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+    }
+
     if (!res.ok) {
       if (res.status === 401 && !endpoint.includes('/auth/login')) {
         localStorage.removeItem('bv_token');
         localStorage.removeItem('bv_user');
         window.dispatchEvent(new Event('auth:unauthorized'));
       }
+
+      if (data && data.error) {
+        return {
+          success: false,
+          error: data.error,
+        };
+      }
+
+      let errorMsg = `Server error (${res.status})`;
+      if (res.status === 413) {
+        errorMsg = 'Uploaded image file is too large. Please choose a smaller photo.';
+      } else if (res.status === 502 || res.status === 504) {
+        errorMsg = 'Server is currently restarting or taking too long. Please try again in a few seconds.';
+      } else if (!data) {
+        const text = await res.text().catch(() => '');
+        if (text && text.length < 150 && !text.includes('<!DOCTYPE')) {
+          errorMsg = text;
+        }
+      }
+
       return {
         success: false,
-        error: data.error || { code: 'HTTP_ERROR', message: `Request failed with status ${res.status}` },
+        error: { code: `HTTP_${res.status}`, message: errorMsg },
       };
     }
 
-    return data;
+    return data || { success: true };
   } catch (err: any) {
     return {
       success: false,
-      error: { code: 'NETWORK_ERROR', message: err.message || 'Network request failed' },
+      error: { code: 'NETWORK_ERROR', message: err.message || 'Network request failed. Please check your internet connection.' },
     };
   }
 }

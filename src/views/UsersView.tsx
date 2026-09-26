@@ -385,7 +385,7 @@ export const UsersView: React.FC = () => {
                           const img = new Image();
                           img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const maxDim = 1200;
+                            const maxDim = 900;
                             let w = img.width;
                             let h = img.height;
                             if (w > h) {
@@ -397,7 +397,7 @@ export const UsersView: React.FC = () => {
                             canvas.height = h;
                             const ctx = canvas.getContext('2d');
                             ctx?.drawImage(img, 0, 0, w, h);
-                            setIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                            setIdProofImage(canvas.toDataURL('image/jpeg', 0.72));
                           };
                           img.src = ev.target?.result as string;
                         };
@@ -565,7 +565,7 @@ export const UsersView: React.FC = () => {
                           const img = new Image();
                           img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const maxDim = 1200;
+                            const maxDim = 900;
                             let w = img.width;
                             let h = img.height;
                             if (w > h) {
@@ -577,7 +577,7 @@ export const UsersView: React.FC = () => {
                             canvas.height = h;
                             const ctx = canvas.getContext('2d');
                             ctx?.drawImage(img, 0, 0, w, h);
-                            setEditIdProofImage(canvas.toDataURL('image/jpeg', 0.82));
+                            setEditIdProofImage(canvas.toDataURL('image/jpeg', 0.72));
                           };
                           img.src = ev.target?.result as string;
                         };
