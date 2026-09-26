@@ -1,0 +1,38 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bandhan_vatika_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://vatika_user:vatika_secure_pass_2026@postgres:5432/bandhan_vatika
+      - JWT_SECRET=change_this_to_a_random_secure_secret_in_production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bandhan_vatika_pg
+    restart: always
+    environment:
+      POSTGRES_USER: vatika_user
+      POSTGRES_PASSWORD: vatika_secure_pass_2026
+      POSTGRES_DB: bandhan_vatika
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vatika_user -d bandhan_vatika"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

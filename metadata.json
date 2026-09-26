@@ -1,0 +1,6 @@
+{
+  "name": "Bandhan Vatika - Billing & Booking Management",
+  "description": "Enterprise billing, booking calendar, quotation, and financial management system for Bandhan Vatika banquet and guest rooms.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

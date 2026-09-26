@@ -1,0 +1,526 @@
+// Bandhan Vatika - Marriage Garden & Banquet Management System
+// PostgreSQL Database Schema using Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum UserRole {
+  OWNER
+  MANAGER
+  ACCOUNTANT
+  RECEPTIONIST
+  STAFF
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum HallStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum RoomStatus {
+  AVAILABLE
+  RESERVED
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+  BLOCKED
+}
+
+enum BookingStatus {
+  INQUIRY
+  QUOTATION
+  PENDING_ADVANCE
+  CONFIRMED
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CONVERTED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  CARD
+  BANK_TRANSFER
+  CHEQUE
+  OTHER
+}
+
+enum PaymentType {
+  ADVANCE
+  PARTIAL
+  FINAL
+}
+
+enum ExpenseCategory {
+  CATERING
+  DECORATION
+  ELECTRICITY
+  MAINTENANCE
+  CLEANING
+  WAGES
+  MARKETING
+  OTHER
+}
+
+// ==========================================
+// CORE ENTITIES
+// ==========================================
+
+/// System Access Roles with granular permissions
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // OWNER, MANAGER, ACCOUNTANT, RECEPTIONIST, STAFF
+  displayName String?
+  description String?
+  permissions Json?    // List of permission strings or policy objects
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+}
+
+/// Internal Staff and Admin Users
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  username     String     @unique
+  passwordHash String
+  name         String
+  phone        String?
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  status       UserStatus @default(ACTIVE)
+  lastLoginAt  DateTime?
+
+  // Relations
+  bookingsCreated Booking[]  @relation("BookingsCreatedByUser")
+  paymentsCreated Payment[]  @relation("PaymentsCreatedByUser")
+  expensesCreated Expense[]  @relation("ExpensesCreatedByUser")
+  auditLogs       AuditLog[] @relation("UserAuditLogs")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([username])
+  @@index([roleId])
+  @@index([status])
+}
+
+/// Client & Guest Records
+model Customer {
+  id                String   @id @default(cuid())
+  customerCode      String   @unique // e.g. "CUST-001"
+  name              String
+  mobile            String   @unique
+  email             String?
+  address           String?
+  city              String?
+  idProofType       String?  // Aadhaar, PAN, Passport, Driving License
+  idProofNumber     String?
+  notes             String?
+  isActive          Boolean  @default(true)
+  totalBookings     Int      @default(0)
+  totalSpent        Decimal  @default(0.00) @db.Decimal(12, 2)
+  outstandingAmount Decimal  @default(0.00) @db.Decimal(12, 2)
+
+  // Relations
+  bookings   Booking[]
+  quotations Quotation[]
+  invoices   Invoice[]
+  payments   Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerCode])
+  @@index([mobile])
+  @@index([email])
+  @@index([name])
+}
+
+/// Banquet Halls & Marriage Lawns
+model Hall {
+  id          String     @id @default(cuid())
+  code        String     @unique // e.g. "HALL-A", "LAWN-1"
+  name        String
+  type        String     // Banquet Hall, Open Air Lawn, Mini Hall
+  capacity    Int
+  basePrice   Decimal    @db.Decimal(12, 2)
+  status      HallStatus @default(ACTIVE)
+  amenities   Json       @default("[]") // Tags: ["AC", "Stage", "Parking", "Sound System"]
+  description String?
+
+  // Relations
+  primaryBookings Booking[]     @relation("PrimaryHallBooking")
+  bookingHalls    BookingHall[]
+  quotations      Quotation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@index([status])
+  @@index([type])
+}
+
+/// Guest & Bridal Accommodations
+model Room {
+  id            String     @id @default(cuid())
+  roomNumber    String     @unique // e.g. "101", "201", "301"
+  roomType      String     // Deluxe Room, Family Room, Suite Room
+  isAc          Boolean    @default(true)
+  capacity      Int
+  pricePerNight Decimal    @db.Decimal(12, 2)
+  status        RoomStatus @default(AVAILABLE)
+  amenities     Json       @default("[]") // Tags: ["AC", "TV", "King Bed", "Balcony"]
+  description   String?
+
+  // Relations
+  primaryBookings Booking[]     @relation("PrimaryRoomBooking")
+  bookingRooms    BookingRoom[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roomNumber])
+  @@index([status])
+  @@index([roomType])
+}
+
+/// Central Booking Contract & Scheduling
+model Booking {
+  id            String   @id @default(cuid())
+  bookingNumber String   @unique // e.g. "BV-BKG-2024-001"
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  eventType  String // Wedding, Reception, Engagement, Birthday, Corporate
+  eventDate  String // YYYY-MM-DD
+  startTime  String // HH:mm
+  endTime    String // HH:mm
+  guestCount Int    @default(100)
+
+  // Direct hall & room relations
+  hallId String?
+  hall   Hall?   @relation("PrimaryHallBooking", fields: [hallId], references: [id], onDelete: SetNull)
+  roomId String?
+  room   Room?   @relation("PrimaryRoomBooking", fields: [roomId], references: [id], onDelete: SetNull)
+
+  // Many-to-many hall & room schedules for multi-venue events
+  halls BookingHall[]
+  rooms BookingRoom[]
+
+  // Itemized Services breakdown (catering, decor, sound, generator)
+  services Json @default("[]")
+
+  // Financial calculations
+  subtotal      Decimal @default(0.00) @db.Decimal(12, 2)
+  discount      Decimal @default(0.00) @db.Decimal(12, 2)
+  taxPercent    Decimal @default(0.00) @db.Decimal(5, 2)
+  taxAmount     Decimal @default(0.00) @db.Decimal(12, 2)
+  grandTotal    Decimal @default(0.00) @db.Decimal(12, 2)
+  paidAmount    Decimal @default(0.00) @db.Decimal(12, 2)
+  balanceAmount Decimal @default(0.00) @db.Decimal(12, 2)
+
+  status BookingStatus @default(CONFIRMED)
+  notes  String?
+
+  createdById String?
+  createdBy   User?   @relation("BookingsCreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+
+  // Relations
+  quotations Quotation[]
+  invoices   Invoice[]
+  payments   Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bookingNumber])
+  @@index([customerId])
+  @@index([eventDate])
+  @@index([status])
+  @@index([hallId])
+  @@index([roomId])
+  @@index([eventDate, startTime, endTime])
+}
+
+/// Explicit Many-to-Many Booking to Hall scheduling
+model BookingHall {
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hallId    String
+  hall      Hall    @relation(fields: [hallId], references: [id], onDelete: Restrict)
+
+  eventDate String // YYYY-MM-DD
+  startTime String // HH:mm
+  endTime   String // HH:mm
+  price     Decimal @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+
+  @@unique([hallId, eventDate, startTime, endTime])
+  @@index([bookingId])
+  @@index([hallId, eventDate])
+}
+
+/// Explicit Many-to-Many Booking to Room reservations
+model BookingRoom {
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  roomId    String
+  room      Room    @relation(fields: [roomId], references: [id], onDelete: Restrict)
+
+  checkInDate  String // YYYY-MM-DD
+  checkOutDate String // YYYY-MM-DD
+  price        Decimal @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+  @@index([roomId, checkInDate, checkOutDate])
+}
+
+/// Formal Price Proposals & Quotations
+model Quotation {
+  id              String          @id @default(cuid())
+  quotationNumber String          @unique // e.g. "BV-QUO-2026-00001"
+  customerId      String
+  customer        Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  bookingId       String?
+  booking         Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  hallId          String?
+  hall            Hall?           @relation(fields: [hallId], references: [id], onDelete: SetNull)
+
+  eventType       String
+  eventDate       String          // YYYY-MM-DD
+  items           QuotationItem[] // Line items relation
+
+  subtotal        Decimal         @default(0.00) @db.Decimal(12, 2)
+  discount        Decimal         @default(0.00) @db.Decimal(12, 2)
+  taxPercent      Decimal         @default(18.00) @db.Decimal(5, 2)
+  taxAmount       Decimal         @default(0.00) @db.Decimal(12, 2)
+  totalAmount     Decimal         @default(0.00) @db.Decimal(12, 2)
+
+  validUntil      String          // YYYY-MM-DD
+  terms           String?         @db.Text
+  notes           String?         @db.Text
+  status          QuotationStatus @default(DRAFT)
+
+  invoices        Invoice[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([quotationNumber])
+  @@index([customerId])
+  @@index([bookingId])
+  @@index([hallId])
+  @@index([status])
+  @@index([eventDate])
+}
+
+/// Itemized services and venue rates for Quotation proposals
+model QuotationItem {
+  id          String    @id @default(cuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  description String
+  quantity    Int       @default(1)
+  rate        Decimal   @db.Decimal(12, 2)
+  amount      Decimal   @db.Decimal(12, 2)
+  notes       String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([quotationId])
+}
+
+/// GST-Compliant Tax Invoices
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique // e.g. "BV-INV-2026-00001"
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  bookingId     String?
+  booking       Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  quotationId   String?
+  quotation     Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+
+  invoiceDate   String   @default("") // YYYY-MM-DD
+  eventDate     String   // YYYY-MM-DD
+  eventType     String   @default("Event")
+  items         Json     @default("[]") // Line items: [{ description, quantity, rate, amount }]
+
+  subtotal      Decimal  @default(0.00) @db.Decimal(12, 2)
+  discount      Decimal  @default(0.00) @db.Decimal(12, 2)
+  taxPercent    Decimal  @default(0.00) @db.Decimal(5, 2)
+  taxAmount     Decimal  @default(0.00) @db.Decimal(12, 2)
+  cgstAmount    Decimal  @default(0.00) @db.Decimal(12, 2)
+  sgstAmount    Decimal  @default(0.00) @db.Decimal(12, 2)
+  igstAmount    Decimal  @default(0.00) @db.Decimal(12, 2)
+  grandTotal    Decimal  @default(0.00) @db.Decimal(12, 2)
+  paidAmount    Decimal  @default(0.00) @db.Decimal(12, 2)
+  balanceAmount Decimal  @default(0.00) @db.Decimal(12, 2)
+
+  status        InvoiceStatus @default(ISSUED)
+  dueDate       String?       // YYYY-MM-DD
+  terms         String?
+  notes         String?
+  snapshot      String   @default("{}") // Immutable historical business & customer details
+  createdBy     String?
+
+  // Relations
+  payments      Payment[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([invoiceNumber])
+  @@index([customerId])
+  @@index([bookingId])
+  @@index([quotationId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([invoiceDate])
+}
+
+/// Financial Payments, Advance Deposits & Receipts
+model Payment {
+  id            String   @id @default(cuid())
+  receiptNumber String   @unique // e.g. "RCPT-2024-001"
+  invoiceId     String?
+  invoice       Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  bookingId     String?
+  booking       Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  amount               Decimal       @db.Decimal(12, 2)
+  paymentMethod        PaymentMethod
+  transactionReference String?       // UPI UTR, Cheque No, Bank NEFT Ref
+  paymentDate          String        // YYYY-MM-DD
+  notes                String?
+
+  // Financial safety & reversal tracking
+  paymentType    PaymentType   @default(PARTIAL)
+  isReversed     Boolean       @default(false)
+  reversalReason String?
+  reversedAt     DateTime?
+  reversedBy     String?
+
+  createdById String?
+  createdBy   User?   @relation("PaymentsCreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([receiptNumber])
+  @@index([customerId])
+  @@index([bookingId])
+  @@index([invoiceId])
+  @@index([paymentDate])
+  @@index([isReversed])
+}
+
+/// Venue Operational Expenses & Outflows
+model Expense {
+  id            String          @id @default(cuid())
+  expenseCode   String          @unique // e.g. "EXP-2024-001"
+  category      ExpenseCategory
+  amount        Decimal         @db.Decimal(12, 2)
+  date          String          // YYYY-MM-DD
+  vendor        String
+  paymentMethod PaymentMethod
+  notes         String?
+
+  createdById String?
+  createdBy   User?           @relation("ExpensesCreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([expenseCode])
+  @@index([category])
+  @@index([date])
+  @@index([vendor])
+}
+
+/// Immutable Security & Activity Audit Trail
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+  userName  String
+  userRole  String
+  action    String   // LOGIN, BOOKING_CREATE, STATUS_CHANGE, PAYMENT_RECORD, PAYMENT_REVERSE, etc.
+  entity    String   // Booking, Invoice, Payment, Customer, Expense, User
+  entityId  String?
+  details   String?  @db.Text
+  ipAddress String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([entityId])
+  @@index([createdAt])
+}
+
+/// Property Configuration & GST Invoice Coordinates
+model Settings {
+  id                 String   @id @default("default")
+  businessName       String   @default("Bandhan Vatika")
+  tagline            String   @default("Celebrations · Together · Always")
+  address            String   @default("Bypass Road, Near Emerald Club, Indore, MP 452010")
+  phone              String   @default("+91 98260 12345")
+  email              String   @default("contact@bandhanvatika.com")
+  gstin              String   @default("23AABCB1234F1Z0")
+  defaultTaxPercent  Decimal  @default(18.00) @db.Decimal(5, 2)
+  bankName           String   @default("HDFC Bank")
+  accountNumber      String   @default("50200088991234")
+  ifscCode           String   @default("HDFC0001234")
+  termsAndConditions String   @db.Text
+  updatedAt          DateTime @updatedAt
+}

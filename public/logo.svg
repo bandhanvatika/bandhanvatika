@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 90" fill="none">
+  <defs>
+    <linearGradient id="bvGoldLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5E3B5"/>
+      <stop offset="45%" stop-color="#C5A059"/>
+      <stop offset="100%" stop-color="#8B6B23"/>
+    </linearGradient>
+    <linearGradient id="bvEmeraldLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A3828"/>
+      <stop offset="50%" stop-color="#14281D"/>
+      <stop offset="100%" stop-color="#0B1711"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left Crest Emblem -->
+  <g transform="translate(6, 5) scale(0.8)">
+    <rect x="4" y="4" width="92" height="92" rx="24" fill="url(#bvEmeraldLogo)" stroke="url(#bvGoldLogo)" stroke-width="2.5"/>
+    <path d="M50 14 C66 14 78 26 78 44 C78 68 50 82 50 82 C50 82 22 68 22 44 C22 26 34 14 50 14 Z" 
+          fill="none" stroke="url(#bvGoldLogo)" stroke-width="1.8" stroke-dasharray="0.5 3" stroke-linecap="round"/>
+    <path d="M50 18 C52 24 60 30 68 36 C72 44 72 54 66 62 C58 72 50 78 50 78 C50 78 42 72 34 62 C28 54 28 44 32 36 C40 30 48 24 50 18 Z" 
+          fill="none" stroke="url(#bvGoldLogo)" stroke-width="1.8"/>
+    <path d="M50 32 C53 38 57 44 57 50 C57 56 50 64 50 64 C50 64 43 56 43 50 C43 44 47 38 50 32 Z" 
+          fill="url(#bvGoldLogo)" opacity="0.3"/>
+    <!-- BV monogram -->
+    <path d="M41 42 H47 C50 42 52 43.5 52 46 C52 47.8 50.8 49 49 49.5 C51.5 50.2 53 52 53 54.5 C53 57.5 50.5 59 47 59 H41 V42 Z M44.5 45 V48.5 H47 C48.5 48.5 49.5 47.8 49.5 46.8 C49.5 45.7 48.5 45 47 45 H44.5 Z M44.5 51.5 V56 H47.5 C49.2 56 50.2 55.2 50.2 53.8 C50.2 52.4 49.2 51.5 47.5 51.5 H44.5 Z" 
+          fill="url(#bvGoldLogo)"/>
+    <path d="M55 42 L60 56.5 L65 42 H68.5 L61.8 59 H58.2 L51.5 42 H55 Z" 
+          fill="url(#bvGoldLogo)"/>
+    <circle cx="50" cy="13" r="2.5" fill="url(#bvGoldLogo)"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="100" y="44" font-family="'Cinzel', Georgia, serif" font-size="28" font-weight="800" letter-spacing="3" fill="#14281D">
+    BANDHAN VATIKA
+  </text>
+  <text x="102" y="66" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="11" font-weight="600" letter-spacing="4" fill="#8B6B23">
+    CELEBRATIONS · TOGETHER · ALWAYS
+  </text>
+</svg>
