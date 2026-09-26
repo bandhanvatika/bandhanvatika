@@ -87,11 +87,11 @@ app.post('/api/v1/auth/login', async (req: Request, res: Response) => {
       });
     }
 
-    const trimmed = String(username).trim().toLowerCase();
+    const trimmed = String(username).trim();
     const [user] = await db
       .select()
       .from(users)
-      .where(or(eq(users.username, trimmed), eq(users.email, trimmed)));
+      .where(or(ilike(users.username, trimmed), ilike(users.email, trimmed)));
 
     if (!user) {
       return res.status(401).json({
