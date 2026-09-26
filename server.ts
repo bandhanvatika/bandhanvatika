@@ -303,6 +303,64 @@ app.get('/api/v1/dashboard', authenticate, async (req: AuthenticatedRequest, res
   }
 });
 
+// 2.1 NOTIFICATIONS MODULE (Live System Alerts)
+app.get('/api/v1/notifications', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const allBookings = await db.select().from(bookings).orderBy(desc(bookings.eventDate));
+    const allCustomers = await db.select().from(customers);
+    const allHalls = await db.select().from(halls);
+    const custMap = new Map(allCustomers.map((c) => [c.id, c]));
+    const hallMap = new Map(allHalls.map((h) => [h.id, h]));
+
+    const notifs: Array<{
+      id: string;
+      title: string;
+      desc: string;
+      time: string;
+      type: 'UPCOMING' | 'PAYMENT' | 'SYSTEM';
+      unread: boolean;
+    }> = [];
+
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    for (const b of allBookings) {
+      if (b.status === 'CONFIRMED' && Number(b.balanceAmount || 0) > 0) {
+        const cust = custMap.get(b.customerId);
+        notifs.push({
+          id: `bal-${b.id}`,
+          title: 'Balance Payment Due',
+          desc: `₹${Number(b.balanceAmount).toLocaleString('en-IN')} pending for ${b.bookingNumber} (${cust?.name || 'Customer'})`,
+          time: `Event: ${b.eventDate}`,
+          type: 'PAYMENT',
+          unread: true,
+        });
+      }
+
+      if (b.status === 'CONFIRMED' && b.eventDate >= todayStr && b.eventDate <= nextWeek) {
+        const hall = b.hallId ? hallMap.get(b.hallId) : null;
+        notifs.push({
+          id: `upc-${b.id}`,
+          title: 'Upcoming Event',
+          desc: `${b.eventType} at ${hall?.name || 'Bandhan Vatika'} on ${b.eventDate}`,
+          time: b.startTime ? `${b.startTime} onwards` : 'Scheduled',
+          type: 'UPCOMING',
+          unread: true,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: notifs,
+    });
+  } catch (err: any) {
+    console.error('Notifications error:', err);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Failed to fetch notifications.' } });
+  }
+});
+
 // ----------------------------------------------------
 // 3. CUSTOMER MODULE (Master Data)
 // ----------------------------------------------------

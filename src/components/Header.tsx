@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Menu,
   Search,
@@ -7,9 +7,14 @@ import {
   Plus,
   Shield,
   LogOut,
+  CheckCircle2,
+  AlertCircle,
+  CalendarCheck,
+  CheckCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { BrandLogo } from './BrandLogo.tsx';
+import { apiRequest } from '../api/client.ts';
 
 interface HeaderProps {
   onOpenMobileMenu: () => void;
@@ -26,6 +31,44 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, hasRole, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await apiRequest('/notifications');
+      if (res.success && Array.isArray(res.data)) {
+        setNotifications(res.data);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  // Close notifications on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
 
   const todayStr = new Intl.DateTimeFormat('en-IN', {
     weekday: 'short',
@@ -33,12 +76,6 @@ export const Header: React.FC<HeaderProps> = ({
     month: 'short',
     year: 'numeric',
   }).format(new Date());
-
-  const notifications = [
-    { id: 1, title: 'Upcoming Wedding', desc: 'Rahul Sharma in Grand Hall on 15 Nov', time: '1 hr ago' },
-    { id: 2, title: 'Payment Received', desc: '₹1,80,000 for Engagement (Priya Mehta)', time: '3 hrs ago' },
-    { id: 3, title: 'Balance Pending', desc: 'Invoice INV-2024-003 due in 7 days', time: 'Yesterday' },
-  ];
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200/80 px-4 sm:px-6 py-3 transition-all">
@@ -89,33 +126,90 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Notifications button */}
-          <div className="relative">
+          <div className="relative" ref={notifRef}>
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={() => {
+                setShowNotifications(!showNotifications);
+                if (!showNotifications) fetchNotifications();
+              }}
               className="relative p-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors"
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-stone-200 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-100 px-2">
-                  <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">System Alerts</span>
-                  <span className="text-[10px] text-[#C5A059] font-medium bg-[#C5A059]/10 px-2 py-0.5 rounded-full">3 New</span>
+              <div className="absolute right-0 mt-2 w-80 sm:w-88 bg-white rounded-2xl shadow-xl border border-stone-200 p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-stone-100 px-1">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">System Alerts</span>
+                    {unreadCount > 0 ? (
+                      <span className="text-[10px] text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60">
+                        {unreadCount} New
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                        Up to date
+                      </span>
+                    )}
+                  </div>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-[11px] text-[#8C6D2E] hover:text-[#14281D] font-medium flex items-center space-x-1 transition-colors"
+                    >
+                      <CheckCheck className="w-3.5 h-3.5" />
+                      <span>Mark read</span>
+                    </button>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  {notifications.map((n) => (
-                    <div key={n.id} className="p-2 rounded-xl hover:bg-stone-50 transition-colors cursor-pointer text-left">
-                      <div className="flex justify-between items-start">
-                        <span className="text-xs font-semibold text-stone-800">{n.title}</span>
-                        <span className="text-[10px] text-stone-400">{n.time}</span>
-                      </div>
-                      <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">{n.desc}</p>
+
+                {notifications.length === 0 ? (
+                  <div className="py-6 px-4 text-center">
+                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2.5 border border-emerald-100">
+                      <CheckCircle2 className="w-5 h-5" />
                     </div>
-                  ))}
-                </div>
+                    <p className="text-xs font-bold text-stone-800">All Caught Up</p>
+                    <p className="text-[11px] text-stone-400 mt-0.5">
+                      No pending alerts or notifications. All venue schedules & balances are up to date.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                    {notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`p-2.5 rounded-xl transition-colors cursor-pointer text-left flex items-start space-x-2.5 ${
+                          n.unread ? 'bg-amber-50/60 hover:bg-amber-50 border border-amber-100/80' : 'hover:bg-stone-50'
+                        }`}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          {n.type === 'UPCOMING' ? (
+                            <div className="w-7 h-7 rounded-lg bg-[#14281D]/10 text-[#14281D] flex items-center justify-center">
+                              <CalendarCheck className="w-3.5 h-3.5 text-[#C5A059]" />
+                            </div>
+                          ) : (
+                            <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start gap-1">
+                            <span className="text-xs font-bold text-stone-800 truncate">{n.title}</span>
+                            <span className="text-[10px] text-stone-400 whitespace-nowrap shrink-0">{n.time}</span>
+                          </div>
+                          <p className="text-[11px] text-stone-500 mt-0.5 leading-snug line-clamp-2">{n.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
