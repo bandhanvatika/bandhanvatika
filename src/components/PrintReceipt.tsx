@@ -98,7 +98,12 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
   const invoice = propInvoice || propData?.invoice || null;
 
   // Determine if terms should be shown (booking gets terms by default, invoice receipt does not unless specified)
-  const isBookingReceipt = Boolean(booking || propData?.booking);
+  const isBookingReceipt = Boolean(
+    booking ||
+    propData?.booking ||
+    (propData as any)?.bookingId ||
+    (propData as any)?.booking_id
+  );
   const shouldShowTerms = propShowTerms !== undefined
     ? propShowTerms
     : propData?.showTerms !== undefined
@@ -619,7 +624,7 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
           {shouldShowTerms ? (
             <div className="space-y-1">
               <span className="font-bold text-stone-800 uppercase tracking-wider block text-[11px]">
-                नियम व शर्तें (Terms & Conditions):
+                नोट :- (नियम व शर्तें / Terms & Conditions):
               </span>
               <ol className="list-decimal list-inside space-y-1 text-stone-700 font-medium text-[10.5px] leading-relaxed">
                 <li>किसी कारण वश सट्टा रद्द होने पर अग्रीम राशी जब्त हो जायेगी</li>

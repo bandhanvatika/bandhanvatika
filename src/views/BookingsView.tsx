@@ -1426,7 +1426,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
         >
           <div className="space-y-4">
             <div className="max-h-[70vh] overflow-y-auto rounded-xl border border-stone-200 shadow-inner p-2 bg-stone-100">
-              <PrintReceipt data={printReceiptData} showPreviewInUI={true} />
+              <PrintReceipt data={printReceiptData} showPreviewInUI={true} showTerms={true} />
             </div>
 
             <div className="flex justify-end space-x-2 pt-2 border-t border-stone-200 no-print">
