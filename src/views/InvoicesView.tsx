@@ -530,7 +530,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                   paidAmount={Number(activeInvoice.paidAmount || 0)}
                   balanceAmount={Number(activeInvoice.balanceAmount || 0)}
                   notes={activeInvoice.notes || undefined}
-                  showTerms={true}
+                  showTerms={false}
                 />
               ) : (
                 <div className="bg-white p-6 sm:p-10 rounded-2xl border border-stone-200 text-stone-900 font-sans shadow-xs">
@@ -715,21 +715,15 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                     </div>
                   )}
 
-                  {/* Terms & Signature */}
-                  <div className="mt-8 pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-end gap-6 text-[10px] text-stone-500">
-                    <div className="max-w-lg space-y-1.5 text-left">
-                      <p className="font-bold text-stone-800 uppercase tracking-wider text-[11px]">
-                        नियम व शर्तें (Terms & Conditions):
+                  {/* Thank You Note & Signature */}
+                  <div className="mt-8 pt-4 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-end gap-6 text-xs text-stone-500">
+                    <div className="max-w-lg space-y-1 text-left">
+                      <p className="font-black text-[#14281D] text-sm uppercase tracking-wide">
+                        Thank You!
                       </p>
-                      <ol className="list-decimal list-inside space-y-1 text-stone-700 text-[11px] leading-relaxed font-medium">
-                        <li>किसी कारण वश सट्टा रद्द होने पर अग्रीम राशी जब्त हो जायेगी</li>
-                        <li>उत्सव का दिनांक पुनः बदलने पर उपलब्धता देखी जायेगी</li>
-                        <li>तय कुल रकम का 30% अग्रीम के रूप में लिया जायेगा</li>
-                        <li>उत्सव की दिनांक से 5 दिन पहले कुल रकम का भुगतान करना होगा।</li>
-                        <li>उत्सव भवन के यत्र तत्र गंदगी फैलाने पर सफाई का खर्च सट्टेदार को देना होगा।</li>
-                        <li>किसी प्रकार का तोड़फोड़ या भारी नुकसान होने पर उसका वाजिब भुगतान सट्टेदार को करना होगा।</li>
-                        <li>उत्सव के दिन किसी भी विद्युत उपकरण के खराबी आने पर ठीक कराने का प्रयास किया जायेगा परन्तु नहीं होने पर उसकी जिम्मेदारी प्रबंधन पर नहीं होगी।</li>
-                      </ol>
+                      <p className="text-stone-600 text-xs font-medium">
+                        Thank you for choosing Bandhan Vatika. Visit Again!
+                      </p>
                     </div>
                     <div className="text-center sm:text-right">
                       <div className="h-10 border-b border-stone-400 w-40 mb-1" />

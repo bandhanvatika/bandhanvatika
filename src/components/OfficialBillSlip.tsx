@@ -57,7 +57,7 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
   grandTotal,
   paidAmount,
   balanceAmount,
-  showTerms = true,
+  showTerms = false,
 }) => {
   // Normalize items
   const cleanItems: OfficialBillItem[] = items.length > 0 ? items : [
@@ -337,7 +337,7 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
               {inWords.replace('Rupees ', '').replace(' Only', '')}
             </div>
             <span className="font-bold shrink-0">Only</span>
-            <span className="font-bold ml-4 tracking-wide text-xs">Thanking You</span>
+            <span className="font-black ml-4 tracking-wider text-xs uppercase text-[#B91C1C]">Thanking You</span>
           </div>
 
           {/* Bottom signatures */}

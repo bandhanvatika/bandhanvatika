@@ -22,6 +22,7 @@ export interface PrintReceiptData {
   invoiceTotal?: string | number;
   previousBalance?: string | number;
   balanceAfterPayment?: string | number;
+  showTerms?: boolean;
 
   // Associated entities
   customer?: Partial<Customer> | null;
@@ -68,6 +69,11 @@ export interface PrintReceiptProps {
    * Initial selected format: 'RED_BOOKLET' (default) or 'STANDARD_RECEIPT'
    */
   initialFormat?: 'RED_BOOKLET' | 'STANDARD_RECEIPT';
+
+  /**
+   * Explicitly toggle terms & conditions (defaults to true for bookings, false for pure bills/invoices)
+   */
+  showTerms?: boolean;
 }
 
 import { amountToIndianWords } from '../utils/numberToWords.ts';
@@ -83,12 +89,21 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
   data: propData,
   showPreviewInUI = false,
   initialFormat = 'RED_BOOKLET',
+  showTerms: propShowTerms,
 }) => {
   const [format, setFormat] = React.useState<'RED_BOOKLET' | 'STANDARD_RECEIPT'>(initialFormat);
 
   // Resolve effective entities from direct props or data bundle
   const booking = propBooking || propData?.booking || null;
   const invoice = propInvoice || propData?.invoice || null;
+
+  // Determine if terms should be shown (booking gets terms by default, invoice receipt does not unless specified)
+  const isBookingReceipt = Boolean(booking || propData?.booking);
+  const shouldShowTerms = propShowTerms !== undefined
+    ? propShowTerms
+    : propData?.showTerms !== undefined
+    ? propData.showTerms
+    : isBookingReceipt;
   const customer = propCustomer || propData?.customer || booking?.customer || invoice?.customer || null;
   const settings = propSettings || propData?.settings || null;
   const currentPay = propCurrentPayment || (propData ? {
@@ -305,7 +320,7 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
             grandTotal={grandTotal}
             paidAmount={totalPaidToDate}
             balanceAmount={outstandingBalance}
-            showTerms={true}
+            showTerms={shouldShowTerms}
           />
         ) : (
           <div className="p-8 sm:p-10 border border-stone-300 print:border-none print:p-0 space-y-5">
@@ -601,20 +616,31 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
             6. TERMS & BANK REMITTANCE COORDINATES
            ========================================================================= */}
         <div className="pt-2 border-t border-stone-200 grid grid-cols-2 gap-4 text-[10px] text-stone-500 leading-tight">
-          <div className="space-y-1">
-            <span className="font-bold text-stone-800 uppercase tracking-wider block text-[11px]">
-              नियम व शर्तें (Terms & Conditions):
-            </span>
-            <ol className="list-decimal list-inside space-y-1 text-stone-700 font-medium text-[10.5px] leading-relaxed">
-              <li>किसी कारण वश सट्टा रद्द होने पर अग्रीम राशी जब्त हो जायेगी</li>
-              <li>उत्सव का दिनांक पुनः बदलने पर उपलब्धता देखी जायेगी</li>
-              <li>तय कुल रकम का 30% अग्रीम के रूप में लिया जायेगा</li>
-              <li>उत्सव की दिनांक से 5 दिन पहले कुल रकम का भुगतान करना होगा।</li>
-              <li>उत्सव भवन के यत्र तत्र गंदगी फैलाने पर सफाई का खर्च सट्टेदार को देना होगा।</li>
-              <li>किसी प्रकार का तोड़फोड़ या भारी नुकसान होने पर उसका वाजिब भुगतान सट्टेदार को करना होगा।</li>
-              <li>उत्सव के दिन किसी भी विद्युत उपकरण के खराबी आने पर ठीक कराने का प्रयास किया जायेगा परन्तु नहीं होने पर उसकी जिम्मेदारी प्रबंधन पर नहीं होगी।</li>
-            </ol>
-          </div>
+          {shouldShowTerms ? (
+            <div className="space-y-1">
+              <span className="font-bold text-stone-800 uppercase tracking-wider block text-[11px]">
+                नियम व शर्तें (Terms & Conditions):
+              </span>
+              <ol className="list-decimal list-inside space-y-1 text-stone-700 font-medium text-[10.5px] leading-relaxed">
+                <li>किसी कारण वश सट्टा रद्द होने पर अग्रीम राशी जब्त हो जायेगी</li>
+                <li>उत्सव का दिनांक पुनः बदलने पर उपलब्धता देखी जायेगी</li>
+                <li>तय कुल रकम का 30% अग्रीम के रूप में लिया जायेगा</li>
+                <li>उत्सव की दिनांक से 5 दिन पहले कुल रकम का भुगतान करना होगा।</li>
+                <li>उत्सव भवन के यत्र तत्र गंदगी फैलाने पर सफाई का खर्च सट्टेदार को देना होगा।</li>
+                <li>किसी प्रकार का तोड़फोड़ या भारी नुकसान होने पर उसका वाजिब भुगतान सट्टेदार को करना होगा।</li>
+                <li>उत्सव के दिन किसी भी विद्युत उपकरण के खराबी आने पर ठीक कराने का प्रयास किया जायेगा परन्तु नहीं होने पर उसकी जिम्मेदारी प्रबंधन पर नहीं होगी।</li>
+              </ol>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <span className="font-black text-[#14281D] uppercase tracking-wider block text-xs">
+                Thank You!
+              </span>
+              <p className="text-stone-600 text-xs font-medium">
+                Thank you for choosing Bandhan Vatika. Visit Again!
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1 bg-stone-50 p-2.5 rounded-lg border border-stone-200 font-mono text-[10px]">
             <span className="font-bold text-stone-700 uppercase tracking-wider font-sans block">

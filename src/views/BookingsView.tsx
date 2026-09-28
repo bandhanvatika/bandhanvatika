@@ -896,6 +896,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                               booking: detailBooking,
                               invoiceTotal: detailBooking.grandTotal,
                               balanceAfterPayment: detailBooking.balanceAmount,
+                              showTerms: true,
                             };
                             setPrintReceiptData(data);
                             setTimeout(() => {
@@ -944,6 +945,26 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
               </div>
             )}
 
+            {/* Official Terms & Conditions (सट्टा नियम व शर्तें) */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 text-xs space-y-2">
+              <div className="flex items-center justify-between pb-1.5 border-b border-amber-200/80 text-amber-950 font-bold">
+                <span className="flex items-center space-x-1.5 text-xs font-bold">
+                  <span>📜</span>
+                  <span>नोट :- (नियम व शर्तें / Terms &amp; Conditions)</span>
+                </span>
+                <span className="text-[10px] font-normal text-amber-800">बंधन वाटिका, पकड़ीयावर, चन्दवाँ, आरा</span>
+              </div>
+              <ol className="list-decimal list-inside space-y-1 text-[11px] leading-relaxed text-stone-800 font-medium">
+                <li>किसी कारण वश सट्टा रद्द होने पर अग्रीम राशी जब्त हो जायेगी</li>
+                <li>उत्सव का दिनांक पुनः बदलने पर उपलब्धता देखी जायेगी</li>
+                <li>तय कुल रकम का 30% अग्रीम के रूप में लिया जायेगा</li>
+                <li>उत्सव की दिनांक से 5 दिन पहले कुल रकम का भुगतान करना होगा।</li>
+                <li>उत्सव भवन के यत्र तत्र गंदगी फैलाने पर सफाई का खर्च सट्टेदार को देना होगा।</li>
+                <li>किसी प्रकार का तोड़फोड़ या भारी नुकसान होने पर उसका वाजिब भुगतान सट्टेदार को करना होगा।</li>
+                <li>उत्सव के दिन किसी भी विद्युत उपकरण के खराबी आने पर ठीक कराने का प्रयास किया जायेगा परन्तु नहीं होने पर उसकी जिम्मेदारी प्रबंधन पर नहीं होगी।</li>
+              </ol>
+            </div>
+
             {/* Action Bar inside details */}
             <div className="flex items-center justify-between pt-2 border-t border-stone-200">
               <div className="flex items-center space-x-2">
@@ -965,6 +986,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                       paymentHistory: detailBooking.payments || [],
                       invoiceTotal: detailBooking.grandTotal,
                       balanceAfterPayment: detailBooking.balanceAmount,
+                      showTerms: true,
                     };
                     setPrintReceiptData(data);
                     setTimeout(() => {
