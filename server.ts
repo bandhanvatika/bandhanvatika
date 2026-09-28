@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { db } from './src/db/index.ts';
 import {
@@ -5706,23 +5707,26 @@ app.all('/api/*', (req: Request, res: Response) => {
 
 async function startServer() {
   const isProduction = process.env.NODE_ENV === 'production';
+  const distDir = path.resolve(__dirname, 'dist');
+  const indexHtml = path.resolve(distDir, 'index.html');
 
-  if (!isProduction) {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
+  if (isProduction || fs.existsSync(indexHtml)) {
     app.use(
-      express.static(path.resolve(__dirname, 'dist'), {
+      express.static(distDir, {
         setHeaders: (res) => {
           res.setHeader('Access-Control-Allow-Origin', '*');
         },
       })
     );
     app.get('*', (req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      res.sendFile(indexHtml);
     });
+  } else {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
   }
 
   app.listen(port, '0.0.0.0', () => {
