@@ -92,7 +92,9 @@ export function printElement(
           /* Ensure print target fills A4 properly and avoids accidental page splits */
           .print-receipt-container,
           .official-bill-wrapper,
+          .booking-slip-wrapper,
           #bandhan-print-receipt,
+          #bandhan-booking-slip,
           #printable-invoice,
           #quotation-print-voucher {
             display: block !important;

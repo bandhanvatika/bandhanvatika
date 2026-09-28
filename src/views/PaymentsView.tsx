@@ -444,7 +444,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({ searchQuery = '' }) 
                   step="0.01"
                   required
                   min="0.01"
-                  placeholder="e.g. 50000"
+                  placeholder="Enter payment amount (₹)"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-emerald-700 outline-none focus:border-[#C5A059]"

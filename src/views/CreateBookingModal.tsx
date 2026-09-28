@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../components/Modal.tsx';
 import { Customer, Hall, Room } from '../types/index.ts';
 import { apiRequest } from '../api/client.ts';
+import { BookingSlip } from '../components/BookingSlip.tsx';
+import { OfficialBillSlip } from '../components/OfficialBillSlip.tsx';
+import { printElement } from '../utils/print.ts';
 import {
   User,
   Calendar,
@@ -22,6 +25,9 @@ import {
   Camera,
   UploadCloud,
   Eye,
+  Printer,
+  FileText,
+  Receipt,
 } from 'lucide-react';
 
 interface CreateBookingModalProps {
@@ -108,9 +114,10 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const [discount, setDiscount] = useState<number>(0);
   const [waiveHallFee, setWaiveHallFee] = useState<boolean>(false);
   const [taxPercent, setTaxPercent] = useState<number>(5);
-  const [advancePayment, setAdvancePayment] = useState<number>(50000);
+  const [advancePayment, setAdvancePayment] = useState<number | ''>(0);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER'>('UPI');
   const [notes, setNotes] = useState('');
+  const [createdBookingResult, setCreatedBookingResult] = useState<any | null>(null);
 
   // Default room dates when eventDate changes
   useEffect(() => {
@@ -157,7 +164,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
       setEventType('Wedding');
       setWaiveHallFee(false);
       setTaxPercent(18);
-      setAdvancePayment(50000);
+      setAdvancePayment(0);
       setServices([
         { id: '1', name: 'Standard Catering Buffet Package', quantity: 1, rate: 120000, amount: 120000 },
         { id: '2', name: 'Floral Stage & Mandap Decoration', quantity: 1, rate: 45000, amount: 45000 },
@@ -486,7 +493,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           amount: s.amount,
         })),
         discount,
-        advancePayment,
+        advancePayment: Number(advancePayment) || 0,
         paymentMethod,
         notes,
       }),
@@ -494,13 +501,194 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
 
     setLoading(false);
 
-    if (bookingRes.success) {
+    if (bookingRes.success && bookingRes.data) {
+      setCreatedBookingResult(bookingRes.data);
+    } else if (bookingRes.success) {
       onSuccess();
       onClose();
     } else {
       setError(bookingRes.error?.message || 'Failed to confirm booking.');
     }
   };
+
+  if (createdBookingResult) {
+    const bkg = createdBookingResult.booking;
+    const cust =
+      createdBookingResult.customer ||
+      customersList.find((c) => c.id === bkg.customerId) ||
+      (isNewCustomer ? { name: newCustName, mobile: newCustMobile, address: newCustAddress } : null);
+    const hall = createdBookingResult.hall || selectedHall;
+    const fullBooking = {
+      ...bkg,
+      customer: cust,
+      hall,
+      services,
+      hallRentalPrice: waiveHallFee ? 0 : (selectedHall?.basePrice || 0),
+    };
+    const bkgAdvance = Number(bkg.paidAmount !== undefined ? bkg.paidAmount : (Number(advancePayment) || 0));
+    const bkgBalance = Number(bkg.balanceAmount !== undefined ? bkg.balanceAmount : balanceDue);
+
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={() => {
+          onSuccess();
+          onClose();
+        }}
+        title="सट्टा / बुकिंग दर्ज हो गई (Booking Confirmed)"
+        subtitle={`Booking #${bkg.bookingNumber}`}
+        maxWidth="3xl"
+      >
+        <div className="space-y-6 text-center py-4">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-3xl shadow-xs">
+            ✓
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="text-xl font-bold font-brand text-[#14281D]">
+              सट्टा / बुकिंग सफलतापूर्वक दर्ज हो गई!
+            </h3>
+            <p className="text-xs text-stone-600">
+              Booking <span className="font-mono font-bold text-stone-900">#{bkg.bookingNumber}</span> has been confirmed.
+            </p>
+          </div>
+
+          {/* Quick Summary Card */}
+          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-left text-xs grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <span className="text-[10px] text-stone-400 font-bold uppercase block">ग्राहक (Customer)</span>
+              <strong className="text-stone-900">{cust?.name || '—'}</strong>
+              <div className="text-[10px] text-stone-500">{cust?.mobile}</div>
+            </div>
+            <div>
+              <span className="text-[10px] text-stone-400 font-bold uppercase block">उत्सव दिनांक (Date)</span>
+              <strong className="text-[#14281D]">{bkg.eventDate}</strong>
+              <div className="text-[10px] text-stone-500">{bkg.eventType}</div>
+            </div>
+            <div>
+              <span className="text-[10px] text-stone-400 font-bold uppercase block">कुल तय रकम (Total)</span>
+              <strong className="text-stone-900">₹{Number(bkg.grandTotal || grandTotal).toLocaleString('en-IN')}</strong>
+            </div>
+            <div>
+              <span className="text-[10px] text-stone-400 font-bold uppercase block">अग्रीम जमा (Advance)</span>
+              <strong className="text-emerald-700 font-bold">₹{bkgAdvance.toLocaleString('en-IN')}</strong>
+              <div className="text-[10px] text-rose-600 font-semibold">
+                बाकी: ₹{bkgBalance.toLocaleString('en-IN')}
+              </div>
+            </div>
+          </div>
+
+          {/* Two Distinct Documents Box */}
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FAF8F5] via-white to-[#FAF8F5] border-2 border-[#E3DACB] space-y-3">
+            <div className="text-xs font-bold text-stone-800 uppercase tracking-wider">
+              दस्तावेज़ प्रिंट करें (Print Documents - 2 अलग विकल्प)
+            </div>
+            <p className="text-[11px] text-stone-500 max-w-md mx-auto">
+              ग्राहक के लिए सट्टा बुकिंग स्लिप प्रिंट करें या एकाउंट्स के लिए बिल प्रिंट करें:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Option 1: Booking Slip */}
+              <button
+                type="button"
+                onClick={() => {
+                  printElement('bandhan-new-booking-slip', `Booking_Slip_${bkg.bookingNumber}`);
+                }}
+                className="p-4 rounded-xl border-2 border-[#14281D] bg-[#14281D] hover:bg-[#1f3c2b] text-[#F3E7C4] text-left transition-all shadow-md cursor-pointer flex flex-col justify-between"
+              >
+                <div className="flex items-center space-x-2 mb-1.5">
+                  <span className="text-xl">📜</span>
+                  <span className="font-bold text-sm">1. Print Booking Slip (बुकिंग स्लिप)</span>
+                </div>
+                <p className="text-[11px] text-stone-300 leading-snug">
+                  सट्टा बुकिंग रसीद, कुल रकम, अग्रीम जमा, बाकी राशी, 7 नियम व शर्तें एवं सट्टेदार के हस्ताक्षर।
+                </p>
+                <div className="mt-3 pt-2 border-t border-white/20 flex items-center justify-between text-[11px] font-bold text-[#E2C07D]">
+                  <span>🖨️ प्रिंट बुकिंग स्लिप</span>
+                  <span>A4 Slip →</span>
+                </div>
+              </button>
+
+              {/* Option 2: Bill */}
+              <button
+                type="button"
+                onClick={() => {
+                  printElement('bandhan-new-booking-bill', `Bill_${bkg.bookingNumber}`);
+                }}
+                className="p-4 rounded-xl border-2 border-[#B91C1C] bg-white hover:bg-rose-50/50 text-[#B91C1C] text-left transition-all shadow-xs cursor-pointer flex flex-col justify-between"
+              >
+                <div className="flex items-center space-x-2 mb-1.5">
+                  <span className="text-xl">🧾</span>
+                  <span className="font-bold text-sm">2. Print Bill (बिल / Tax Invoice)</span>
+                </div>
+                <p className="text-[11px] text-stone-600 leading-snug">
+                  लाल बुकलेट बिल (Hotel / Food Bill), आइटम अनुसार रेट, CGST/SGST टैक्स एवं Visit Again मुहर।
+                </p>
+                <div className="mt-3 pt-2 border-t border-rose-200 flex items-center justify-between text-[11px] font-bold text-[#B91C1C]">
+                  <span>🖨️ प्रिंट बिल</span>
+                  <span>Red Bill →</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Close button */}
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                onSuccess();
+                onClose();
+              }}
+              className="px-6 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-all cursor-pointer"
+            >
+              सम्पन्न (Done &amp; View All Bookings)
+            </button>
+          </div>
+
+          {/* Hidden print targets */}
+          <div className="hidden">
+            <div id="bandhan-new-booking-slip">
+              <BookingSlip
+                booking={fullBooking}
+                customer={cust}
+                advancePayment={bkgAdvance}
+                paymentMethod={paymentMethod}
+              />
+            </div>
+            <div id="bandhan-new-booking-bill">
+              <OfficialBillSlip
+                billNumber={bkg.bookingNumber?.replace('BV-BKG-', 'BKG-') || '118'}
+                date={new Date().toLocaleDateString('en-GB')}
+                billType={bkg.eventType?.toLowerCase().includes('jeevika') ? 'FOOD BILL' : 'HOTEL / FOOD BILL'}
+                customerName={cust?.name || ''}
+                customerAddress={cust?.address || 'Pakariyabar, Chandwa, Ara'}
+                customerMobile={cust?.mobile || ''}
+                customerGstin={(cust as any)?.gstin || ''}
+                items={
+                  services.length > 0
+                    ? services.map((s) => ({
+                        description: s.name,
+                        quantity: s.quantity,
+                        rate: s.rate,
+                        amount: s.amount,
+                      }))
+                    : [{ description: `${bkg.eventType} Tariff & Services`, rate: grandTotal, amount: grandTotal }]
+                }
+                subtotal={subtotal}
+                discount={discount}
+                taxPercent={taxPercent}
+                grandTotal={grandTotal}
+                paidAmount={bkgAdvance}
+                balanceAmount={bkgBalance}
+                showTerms={false}
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
@@ -1286,14 +1474,67 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-stone-600 uppercase mb-1">Advance (₹)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-stone-600 uppercase">
+                  Advance / Prebooking (₹)
+                </label>
+                <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  Manual Entry
+                </span>
+              </div>
               <input
                 type="number"
                 min="0"
-                value={advancePayment}
-                onChange={(e) => setAdvancePayment(Math.max(0, Number(e.target.value)))}
-                className="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-emerald-700"
+                placeholder="Enter manual advance (₹)"
+                value={advancePayment === '' ? '' : advancePayment}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAdvancePayment(val === '' ? '' : Math.max(0, Number(val)));
+                }}
+                className="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold text-emerald-700 outline-none focus:border-emerald-600 focus:bg-white"
               />
+              {/* Quick Preset Buttons */}
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAdvancePayment(0)}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all ${
+                    (Number(advancePayment) || 0) === 0
+                      ? 'bg-stone-800 text-white'
+                      : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                  }`}
+                >
+                  ₹0
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdvancePayment(Math.round(grandTotal * 0.25))}
+                  className="px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-semibold"
+                >
+                  25%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdvancePayment(Math.round(grandTotal * 0.30))}
+                  className="px-2 py-0.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-[10px] font-semibold"
+                >
+                  30% (Satta Standard)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdvancePayment(Math.round(grandTotal * 0.50))}
+                  className="px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-semibold"
+                >
+                  50%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdvancePayment(grandTotal)}
+                  className="px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-semibold"
+                >
+                  100%
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-[11px] font-bold text-stone-600 uppercase mb-1">Mode</label>
