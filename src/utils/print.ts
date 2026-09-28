@@ -140,8 +140,12 @@ export async function printElement(
           #bandhan-booking-slip,
           #bandhan-new-booking-slip,
           #bandhan-new-booking-bill,
+          #bandhan-new-food-bill,
+          #bandhan-new-banquet-bill,
           #bandhan-booking-slip-preview,
           #bandhan-booking-bill-preview,
+          #bandhan-food-bill-preview,
+          #bandhan-banquet-bill-preview,
           #printable-invoice,
           #quotation-print-voucher {
             display: block !important;
@@ -152,8 +156,16 @@ export async function printElement(
             border: none !important;
             box-shadow: none !important;
             page-break-inside: avoid !important;
-            page-break-after: avoid !important;
             break-inside: avoid !important;
+          }
+
+          .page-break-between {
+            page-break-after: always !important;
+            break-after: page !important;
+            display: block !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
 
           .no-print {

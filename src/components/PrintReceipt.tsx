@@ -311,7 +311,11 @@ export const PrintReceipt: React.FC<PrintReceiptProps> = ({
           <OfficialBillSlip
             billNumber={cleanBillNo}
             date={activePaymentDate}
-            billType={booking?.eventType?.toLowerCase().includes('jeevika') ? 'FOOD BILL' : 'HOTEL / FOOD BILL'}
+            billType={
+              booking?.eventType?.toLowerCase().includes('jeevika') || billTaxPercent === 5
+                ? 'FOOD BILL'
+                : 'HOTEL & BANQUET BILL'
+            }
             customerName={customer?.name || ''}
             customerAddress={customer?.address || 'Pakariyabar, Chandwa, Ara'}
             customerMobile={customer?.mobile || ''}

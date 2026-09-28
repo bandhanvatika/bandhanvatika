@@ -4,6 +4,8 @@ import { Customer, Hall, Room } from '../types/index.ts';
 import { apiRequest } from '../api/client.ts';
 import { BookingSlip } from '../components/BookingSlip.tsx';
 import { OfficialBillSlip } from '../components/OfficialBillSlip.tsx';
+import { DualBillModal } from '../components/DualBillModal.tsx';
+import { isFoodService, splitBookingIntoBills } from '../utils/gstClassifier.ts';
 import { printElement } from '../utils/print.ts';
 import {
   User,
@@ -28,6 +30,8 @@ import {
   Printer,
   FileText,
   Receipt,
+  Utensils,
+  Layers,
 } from 'lucide-react';
 
 interface CreateBookingModalProps {
@@ -114,6 +118,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
   const [discount, setDiscount] = useState<number>(0);
   const [waiveHallFee, setWaiveHallFee] = useState<boolean>(false);
   const [taxPercent, setTaxPercent] = useState<number>(5);
+  const [taxMode, setTaxMode] = useState<'DUAL' | 'FLAT_5' | 'FLAT_18' | 'EXEMPT'>('DUAL');
   const [advancePayment, setAdvancePayment] = useState<number | ''>(0);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER'>('UPI');
   const [notes, setNotes] = useState('');
@@ -147,6 +152,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
       const totalPlates = foodDays * foodPersons;
       setGuestCount(totalPlates > 0 ? totalPlates : 70);
       setWaiveHallFee(true);
+      setTaxMode('FLAT_5');
       setTaxPercent(5);
       setAdvancePayment(0);
       const foodTotal = Math.round((totalPlates > 0 ? totalPlates : 70) * foodPlateRate);
@@ -163,6 +169,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     } else {
       setEventType('Wedding');
       setWaiveHallFee(false);
+      setTaxMode('DUAL');
       setTaxPercent(18);
       setAdvancePayment(0);
       setServices([
@@ -317,11 +324,46 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     return services.reduce((sum, s) => sum + Number(s.amount || 0), 0);
   }, [services]);
 
-  const subtotal = hallCost + roomCost + servicesCost;
-  const taxable = Math.max(0, subtotal - (Number(discount) || 0));
-  const taxAmount = Math.round(taxable * ((Number(taxPercent) || 0) / 100));
-  const grandTotal = taxable + taxAmount;
+  // Categorize services into Food vs Banquet/Rooms
+  const foodSubtotal = useMemo(() => {
+    return services
+      .filter((s) => isFoodService(s.name))
+      .reduce((sum, s) => sum + Number(s.amount || 0), 0);
+  }, [services]);
+
+  const banquetSubtotal = useMemo(() => {
+    const nonFoodServices = services
+      .filter((s) => !isFoodService(s.name))
+      .reduce((sum, s) => sum + Number(s.amount || 0), 0);
+    return hallCost + roomCost + nonFoodServices;
+  }, [hallCost, roomCost, services]);
+
+  const subtotal = foodSubtotal + banquetSubtotal;
+  const rawDiscount = Math.min(subtotal, Math.max(0, Number(discount) || 0));
+
+  // Proportional discount distribution
+  const foodDiscount = subtotal > 0 ? Math.round((foodSubtotal / subtotal) * rawDiscount) : 0;
+  const banquetDiscount = Math.max(0, rawDiscount - foodDiscount);
+
+  const foodTaxable = Math.max(0, foodSubtotal - foodDiscount);
+  const banquetTaxable = Math.max(0, banquetSubtotal - banquetDiscount);
+  const totalTaxable = foodTaxable + banquetTaxable;
+
+  // Tax rates
+  const foodTaxRate = taxMode === 'DUAL' || taxMode === 'FLAT_5' ? 5 : (taxMode === 'EXEMPT' ? 0 : 18);
+  const banquetTaxRate = taxMode === 'DUAL' || taxMode === 'FLAT_18' ? 18 : (taxMode === 'EXEMPT' ? 0 : 5);
+
+  const foodTaxAmount = Math.round((foodTaxable * foodTaxRate) / 100);
+  const banquetTaxAmount = Math.round((banquetTaxable * banquetTaxRate) / 100);
+  const totalTaxAmount = foodTaxAmount + banquetTaxAmount;
+
+  const grandTotal = totalTaxable + totalTaxAmount;
   const balanceDue = Math.max(0, grandTotal - (Number(advancePayment) || 0));
+
+  // Effective tax percent for backend storage
+  const effectiveTaxPercent = totalTaxable > 0
+    ? Number(((totalTaxAmount / totalTaxable) * 100).toFixed(2))
+    : (taxMode === 'FLAT_5' ? 5 : (taxMode === 'FLAT_18' ? 18 : (taxMode === 'EXEMPT' ? 0 : 18)));
 
   const handleAddService = () => {
     if (!newServiceName.trim() || !newServiceRate) return;
@@ -483,7 +525,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
         guestCount,
         hallId: selectedHallId,
         waiveHallFee,
-        taxPercent,
+        taxPercent: effectiveTaxPercent,
         roomIds: selectedRoomIds,
         checkInDate: selectedRoomIds.length > 0 ? checkInDate : undefined,
         checkOutDate: selectedRoomIds.length > 0 ? checkOutDate : undefined,
@@ -492,8 +534,10 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           quantity: s.quantity,
           rate: s.rate,
           amount: s.amount,
+          category: isFoodService(s.name) ? 'FOOD' : 'BANQUET',
+          taxPercent: isFoodService(s.name) ? foodTaxRate : banquetTaxRate,
         })),
-        discount,
+        discount: rawDiscount,
         advancePayment: Number(advancePayment) || 0,
         paymentMethod,
         notes,
@@ -538,6 +582,18 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     const bkgAdvance = Number(bkg.paidAmount !== undefined ? bkg.paidAmount : (Number(advancePayment) || 0));
     const bkgBalance = Number(bkg.balanceAmount !== undefined ? bkg.balanceAmount : balanceDue);
 
+    // Compute statutory dual bills for the confirmed booking
+    const splitBills = splitBookingIntoBills(fullBooking, {
+      customFoodTax: foodTaxRate,
+      customBanquetTax: banquetTaxRate,
+    });
+
+    const bookingNo = bkg.bookingNumber || 'BV-BKG-XXXX';
+    const cleanNo = bookingNo.replace('BV-BKG-', 'BKG-');
+    const foodBillNo = `FD-${cleanNo}`;
+    const banquetBillNo = `BQ-${cleanNo}`;
+    const billDate = new Date().toLocaleDateString('en-GB');
+
     return (
       <Modal
         isOpen={isOpen}
@@ -546,105 +602,163 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
           onSuccess();
           onClose();
         }}
-        title="सट्टा / बुकिंग दर्ज हो गई (Booking Confirmed)"
+        title="सट्टा व बिल तैयार (Booking & Dual Bills Ready)"
         subtitle={`Booking #${bkg.bookingNumber || 'BV-BKG'}`}
-        maxWidth="3xl"
+        maxWidth="4xl"
       >
-        <div className="space-y-6 text-center py-4">
-          <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-3xl shadow-xs">
+        <div className="space-y-5 text-center py-2">
+          <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-2xl shadow-xs">
             ✓
           </div>
 
           <div className="space-y-1">
             <h3 className="text-xl font-bold font-brand text-[#14281D]">
-              सट्टा / बुकिंग सफलतापूर्वक दर्ज हो गई!
+              सट्टा व बिल सफलतापूर्वक दर्ज हो गए!
             </h3>
             <p className="text-xs text-stone-600">
-              Booking <span className="font-mono font-bold text-stone-900">#{bkg.bookingNumber}</span> has been confirmed.
+              Booking <span className="font-mono font-bold text-stone-900">#{bkg.bookingNumber}</span> has been confirmed. Indian GST ke anuroop Food Bill (5%) aur Banquet Bill (18%) alag-alag taiyar hain:
             </p>
           </div>
 
           {/* Quick Summary Card */}
-          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-left text-xs grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 text-left text-xs grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div>
               <span className="text-[10px] text-stone-400 font-bold uppercase block">ग्राहक (Customer)</span>
-              <strong className="text-stone-900">{cust?.name || '—'}</strong>
-              <div className="text-[10px] text-stone-500">{cust?.mobile}</div>
+              <strong className="text-stone-900 truncate block">{cust?.name || '—'}</strong>
+              <div className="text-[10px] text-stone-500 font-mono">{cust?.mobile}</div>
             </div>
             <div>
               <span className="text-[10px] text-stone-400 font-bold uppercase block">उत्सव दिनांक (Date)</span>
               <strong className="text-[#14281D]">{bkg.eventDate}</strong>
-              <div className="text-[10px] text-stone-500">{bkg.eventType}</div>
+              <div className="text-[10px] text-stone-500 truncate">{bkg.eventType}</div>
             </div>
             <div>
               <span className="text-[10px] text-stone-400 font-bold uppercase block">कुल तय रकम (Total)</span>
-              <strong className="text-stone-900">₹{Number(bkg.grandTotal || grandTotal).toLocaleString('en-IN')}</strong>
+              <strong className="text-stone-900">₹{splitBills.combined.totalGrandTotal.toLocaleString('en-IN')}</strong>
+              <div className="text-[10px] text-stone-500">
+                Food: ₹{splitBills.food.grandTotal.toLocaleString('en-IN')} | Hall: ₹{splitBills.banquet.grandTotal.toLocaleString('en-IN')}
+              </div>
             </div>
             <div>
               <span className="text-[10px] text-stone-400 font-bold uppercase block">अग्रीम जमा (Advance)</span>
-              <strong className="text-emerald-700 font-bold">₹{bkgAdvance.toLocaleString('en-IN')}</strong>
+              <strong className="text-emerald-700 font-bold">₹{splitBills.combined.totalPaid.toLocaleString('en-IN')}</strong>
               <div className="text-[10px] text-rose-600 font-semibold">
-                बाकी: ₹{bkgBalance.toLocaleString('en-IN')}
+                बाकी: ₹{splitBills.combined.totalBalance.toLocaleString('en-IN')}
               </div>
             </div>
           </div>
 
-          {/* Two Distinct Documents Box */}
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FAF8F5] via-white to-[#FAF8F5] border-2 border-[#E3DACB] space-y-3">
-            <div className="text-xs font-bold text-stone-800 uppercase tracking-wider">
-              दस्तावेज़ प्रिंट करें (Print Documents - 2 अलग विकल्प)
+          {/* Distinct Documents Selection Cards */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FAF8F5] via-white to-[#FAF8F5] border-2 border-[#E3DACB] space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-stone-800 uppercase tracking-wider">
+                दस्तावेज़ प्रिंट करें (Print Separate Documents)
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                भोजन (5% GST) व हॉल (18% GST) अलग-अलग
+              </span>
             </div>
-            <p className="text-[11px] text-stone-500 max-w-md mx-auto">
-              ग्राहक के लिए सट्टा बुकिंग स्लिप प्रिंट करें या एकाउंट्स के लिए बिल प्रिंट करें:
-            </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              {/* Option 1: Booking Slip */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              {/* Card 1: Satta Booking Slip */}
               <button
                 type="button"
                 onClick={() => {
                   printElement('bandhan-new-booking-slip', `Booking_Slip_${bkg.bookingNumber}`);
                 }}
-                className="p-4 rounded-xl border-2 border-[#14281D] bg-[#14281D] hover:bg-[#1f3c2b] text-[#F3E7C4] text-left transition-all shadow-md cursor-pointer flex flex-col justify-between"
+                className="p-3.5 rounded-xl border-2 border-[#14281D] bg-[#14281D] hover:bg-[#1f3c2b] text-[#F3E7C4] text-left transition-all shadow-md cursor-pointer flex flex-col justify-between"
               >
-                <div className="flex items-center space-x-2 mb-1.5">
-                  <span className="text-xl">📜</span>
-                  <span className="font-bold text-sm">1. Print Booking Slip (बुकिंग स्लिप)</span>
+                <div>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="text-lg">📜</span>
+                    <span className="font-bold text-xs uppercase tracking-wide text-[#E2C07D]">
+                      1. सट्टा पर्ची (Booking Slip)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-300 leading-snug">
+                    सट्टा अनुबंध, कुल रकम, अग्रीम जमा, बाकी राशी, 7 नियम एवं सट्टेदार/प्रबंधक हस्ताक्षर।
+                  </p>
                 </div>
-                <p className="text-[11px] text-stone-300 leading-snug">
-                  सट्टा बुकिंग रसीद, कुल रकम, अग्रीम जमा, बाकी राशी, 7 नियम व शर्तें एवं सट्टेदार के हस्ताक्षर।
-                </p>
                 <div className="mt-3 pt-2 border-t border-white/20 flex items-center justify-between text-[11px] font-bold text-[#E2C07D]">
-                  <span>🖨️ प्रिंट बुकिंग स्लिप</span>
+                  <span>🖨️ प्रिंट सट्टा पर्ची</span>
                   <span>A4 Slip →</span>
                 </div>
               </button>
 
-              {/* Option 2: Bill */}
+              {/* Card 2: Food Bill */}
               <button
                 type="button"
                 onClick={() => {
-                  printElement('bandhan-new-booking-bill', `Bill_${bkg.bookingNumber}`);
+                  printElement('bandhan-new-food-bill', `Food_Bill_${foodBillNo}`);
                 }}
-                className="p-4 rounded-xl border-2 border-[#B91C1C] bg-white hover:bg-rose-50/50 text-[#B91C1C] text-left transition-all shadow-xs cursor-pointer flex flex-col justify-between"
+                className="p-3.5 rounded-xl border-2 border-amber-500 bg-white hover:bg-amber-50/50 text-amber-950 text-left transition-all shadow-xs cursor-pointer flex flex-col justify-between"
               >
-                <div className="flex items-center space-x-2 mb-1.5">
-                  <span className="text-xl">🧾</span>
-                  <span className="font-bold text-sm">2. Print Bill (बिल / Tax Invoice)</span>
+                <div>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="text-lg">🍽️</span>
+                    <span className="font-bold text-xs uppercase tracking-wide text-amber-800">
+                      2. भोजन बिल (Food Bill @ 5%)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-600 leading-snug">
+                    खाद्य व केटरिंग बुफे, SAC 9963, 2.5% CGST + 2.5% SGST, Visit Again मुहर।
+                  </p>
+                  <div className="mt-1 text-[11px] font-mono font-bold text-amber-900">
+                    Total: ₹{splitBills.food.grandTotal.toLocaleString('en-IN')}
+                  </div>
                 </div>
-                <p className="text-[11px] text-stone-600 leading-snug">
-                  लाल बुकलेट बिल (Hotel / Food Bill), आइटम अनुसार रेट, CGST/SGST टैक्स एवं Visit Again मुहर।
-                </p>
-                <div className="mt-3 pt-2 border-t border-rose-200 flex items-center justify-between text-[11px] font-bold text-[#B91C1C]">
-                  <span>🖨️ प्रिंट बिल</span>
+                <div className="mt-3 pt-2 border-t border-amber-200 flex items-center justify-between text-[11px] font-bold text-amber-800">
+                  <span>🖨️ प्रिंट भोजन बिल</span>
                   <span>Red Bill →</span>
                 </div>
+              </button>
+
+              {/* Card 3: Banquet & Rooms Bill */}
+              <button
+                type="button"
+                onClick={() => {
+                  printElement('bandhan-new-banquet-bill', `Banquet_Bill_${banquetBillNo}`);
+                }}
+                className="p-3.5 rounded-xl border-2 border-[#B91C1C] bg-white hover:bg-rose-50/50 text-[#B91C1C] text-left transition-all shadow-xs cursor-pointer flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="text-lg">🏛️</span>
+                    <span className="font-bold text-xs uppercase tracking-wide text-[#B91C1C]">
+                      3. हॉल व रूम बिल (18% GST)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-600 leading-snug">
+                    मैरेज हॉल, लॉन, AC रूम्स व सजावट, SAC 9972, 9% CGST + 9% SGST।
+                  </p>
+                  <div className="mt-1 text-[11px] font-mono font-bold text-[#B91C1C]">
+                    Total: ₹{splitBills.banquet.grandTotal.toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div className="mt-3 pt-2 border-t border-rose-200 flex items-center justify-between text-[11px] font-bold text-[#B91C1C]">
+                  <span>🖨️ प्रिंट हॉल बिल</span>
+                  <span>Red Bill →</span>
+                </div>
+              </button>
+            </div>
+
+            {/* Print Both Bills option */}
+            <div className="pt-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  printElement('bandhan-new-both-bills', `Dual_Bills_${cleanNo}`);
+                }}
+                className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center space-x-1.5"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>📑 Print Both Bills in Sequence (दोनों बिल एक साथ प्रिंट करें)</span>
               </button>
             </div>
           </div>
 
           {/* Close button */}
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-1">
             <button
               type="button"
               onClick={() => {
@@ -660,53 +774,110 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
 
           {/* Offscreen print targets */}
           <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', width: '210mm', opacity: 0, pointerEvents: 'none' }}>
+            {/* Target 1: Satta Booking Slip */}
             <div id="bandhan-new-booking-slip">
               <BookingSlip
                 booking={fullBooking}
                 customer={cust}
-                advancePayment={bkgAdvance}
+                advancePayment={splitBills.combined.totalPaid}
                 paymentMethod={paymentMethod}
               />
             </div>
-            <div id="bandhan-new-booking-bill">
-              {(() => {
-                const linkedInv =
-                  (createdBookingResult as any).invoice ||
-                  ((createdBookingResult as any).invoices && (createdBookingResult as any).invoices[0]);
-                const billNo =
-                  linkedInv?.invoiceNumber?.replace('INV-', '') ||
-                  bkg.bookingNumber?.replace('BV-BKG-', 'BKG-') ||
-                  '118';
-                return (
-                  <OfficialBillSlip
-                    billNumber={billNo}
-                    date={new Date().toLocaleDateString('en-GB')}
-                    billType={bkg.eventType?.toLowerCase().includes('jeevika') ? 'FOOD BILL' : 'HOTEL / FOOD BILL'}
+
+            {/* Target 2: Food Bill (5% GST) */}
+            <div id="bandhan-new-food-bill">
+              <OfficialBillSlip
+                billNumber={foodBillNo}
+                date={billDate}
+                billType="FOOD BILL"
                 customerName={cust?.name || ''}
                 customerAddress={cust?.address || 'Pakariyabar, Chandwa, Ara'}
                 customerMobile={cust?.mobile || ''}
                 customerGstin={(cust as any)?.gstin || ''}
-                items={
-                  services.length > 0
-                    ? services.map((s) => ({
-                        description: s.name,
-                        quantity: s.quantity,
-                        rate: s.rate,
-                        amount: s.amount,
-                      }))
-                    : [{ description: `${bkg.eventType} Tariff & Services`, rate: grandTotal, amount: grandTotal }]
-                }
-                subtotal={subtotal}
-                discount={discount}
-                taxPercent={taxPercent}
-                grandTotal={grandTotal}
-                paidAmount={bkgAdvance}
-                balanceAmount={bkgBalance}
+                items={splitBills.food.items}
+                subtotal={splitBills.food.subtotal}
+                discount={splitBills.food.discount}
+                taxPercent={splitBills.food.taxPercent}
+                cgstAmount={splitBills.food.cgstAmount}
+                sgstAmount={splitBills.food.sgstAmount}
+                grandTotal={splitBills.food.grandTotal}
+                paidAmount={splitBills.food.allocatedPaid}
+                balanceAmount={splitBills.food.allocatedBalance}
                 showTerms={false}
               />
-            );
-          })()}
-        </div>
+            </div>
+
+            {/* Target 3: Banquet & Rooms Bill (18% GST) */}
+            <div id="bandhan-new-banquet-bill">
+              <OfficialBillSlip
+                billNumber={banquetBillNo}
+                date={billDate}
+                billType="HOTEL & BANQUET BILL"
+                customerName={cust?.name || ''}
+                customerAddress={cust?.address || 'Pakariyabar, Chandwa, Ara'}
+                customerMobile={cust?.mobile || ''}
+                customerGstin={(cust as any)?.gstin || ''}
+                items={splitBills.banquet.items}
+                subtotal={splitBills.banquet.subtotal}
+                discount={splitBills.banquet.discount}
+                taxPercent={splitBills.banquet.taxPercent}
+                cgstAmount={splitBills.banquet.cgstAmount}
+                sgstAmount={splitBills.banquet.sgstAmount}
+                grandTotal={splitBills.banquet.grandTotal}
+                paidAmount={splitBills.banquet.allocatedPaid}
+                balanceAmount={splitBills.banquet.allocatedBalance}
+                showTerms={false}
+              />
+            </div>
+
+            {/* Target 4: Both Bills Sequentially (Page 1: Food, Page 2: Banquet) */}
+            <div id="bandhan-new-both-bills">
+              <div>
+                <OfficialBillSlip
+                  billNumber={foodBillNo}
+                  date={billDate}
+                  billType="FOOD BILL"
+                  customerName={cust?.name || ''}
+                  customerAddress={cust?.address || 'Pakariyabar, Chandwa, Ara'}
+                  customerMobile={cust?.mobile || ''}
+                  customerGstin={(cust as any)?.gstin || ''}
+                  items={splitBills.food.items}
+                  subtotal={splitBills.food.subtotal}
+                  discount={splitBills.food.discount}
+                  taxPercent={splitBills.food.taxPercent}
+                  cgstAmount={splitBills.food.cgstAmount}
+                  sgstAmount={splitBills.food.sgstAmount}
+                  grandTotal={splitBills.food.grandTotal}
+                  paidAmount={splitBills.food.allocatedPaid}
+                  balanceAmount={splitBills.food.allocatedBalance}
+                  showTerms={false}
+                />
+              </div>
+
+              <div className="page-break-between" />
+
+              <div>
+                <OfficialBillSlip
+                  billNumber={banquetBillNo}
+                  date={billDate}
+                  billType="HOTEL & BANQUET BILL"
+                  customerName={cust?.name || ''}
+                  customerAddress={cust?.address || 'Pakariyabar, Chandwa, Ara'}
+                  customerMobile={cust?.mobile || ''}
+                  customerGstin={(cust as any)?.gstin || ''}
+                  items={splitBills.banquet.items}
+                  subtotal={splitBills.banquet.subtotal}
+                  discount={splitBills.banquet.discount}
+                  taxPercent={splitBills.banquet.taxPercent}
+                  cgstAmount={splitBills.banquet.cgstAmount}
+                  sgstAmount={splitBills.banquet.sgstAmount}
+                  grandTotal={splitBills.banquet.grandTotal}
+                  paidAmount={splitBills.banquet.allocatedPaid}
+                  balanceAmount={splitBills.banquet.allocatedBalance}
+                  showTerms={false}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </Modal>
@@ -1488,16 +1659,22 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-stone-600 uppercase mb-1">GST Tax (%)</label>
+              <label className="block text-[11px] font-bold text-stone-600 uppercase mb-1">GST Tax Scheme</label>
               <select
-                value={taxPercent}
-                onChange={(e) => setTaxPercent(Number(e.target.value))}
+                value={taxMode}
+                onChange={(e) => {
+                  const mode = e.target.value as any;
+                  setTaxMode(mode);
+                  if (mode === 'FLAT_5') setTaxPercent(5);
+                  else if (mode === 'FLAT_18') setTaxPercent(18);
+                  else if (mode === 'EXEMPT') setTaxPercent(0);
+                }}
                 className="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold outline-none"
               >
-                <option value={5}>5% (Food &amp; Catering)</option>
-                <option value={18}>18% (Standard Banquet &amp; Rooms)</option>
-                <option value={12}>12% (Hotel Stay)</option>
-                <option value={0}>0% (Tax Exempt)</option>
+                <option value="DUAL">🇮🇳 Dual GST (भोजन 5% + हॉल 18%)</option>
+                <option value="FLAT_5">🍲 5% Flat (Food / Catering Only)</option>
+                <option value="FLAT_18">🏛️ 18% Flat (Banquet Only)</option>
+                <option value="EXEMPT">0️⃣ 0% (Tax Exempt)</option>
               </select>
             </div>
             <div>
@@ -1578,6 +1755,81 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             </div>
           </div>
 
+          {/* Statutory Dual GST Breakdown Card */}
+          <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/90 text-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-amber-950 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                <Utensils className="w-3.5 h-3.5 text-amber-700" />
+                Statutory GST Separation (खाद्य 5% व हॉल 18% अलग-अलग)
+              </span>
+              <span className="text-[10px] bg-amber-200/80 text-amber-900 font-mono font-bold px-2 py-0.5 rounded">
+                2 Separate Bills Generated
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* 1. Food portion */}
+              <div className="p-2.5 rounded-lg bg-white border border-amber-200/80">
+                <div className="flex justify-between items-center mb-1">
+                  <strong className="text-amber-900 text-xs flex items-center gap-1">
+                    <span>🍽️</span> 1. भोजन बिल (Food Catering)
+                  </strong>
+                  <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded">
+                    {foodTaxRate}% GST (SAC 9963)
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] text-stone-600">
+                  <span>Food Subtotal:</span>
+                  <span className="font-mono font-medium">₹{foodSubtotal.toLocaleString('en-IN')}</span>
+                </div>
+                {foodDiscount > 0 && (
+                  <div className="flex justify-between text-[11px] text-emerald-600">
+                    <span>Discount:</span>
+                    <span className="font-mono">- ₹{foodDiscount.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-[11px] text-stone-600">
+                  <span>GST ({foodTaxRate}% = {foodTaxRate / 2}% CGST + {foodTaxRate / 2}% SGST):</span>
+                  <span className="font-mono font-semibold">+ ₹{foodTaxAmount.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-amber-950 pt-1 mt-1 border-t border-amber-100">
+                  <span>Food Total:</span>
+                  <span className="font-mono">₹{(foodTaxable + foodTaxAmount).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              {/* 2. Banquet portion */}
+              <div className="p-2.5 rounded-lg bg-white border border-rose-200/80">
+                <div className="flex justify-between items-center mb-1">
+                  <strong className="text-[#B91C1C] text-xs flex items-center gap-1">
+                    <span>🏛️</span> 2. हॉल व रूम बिल (Banquet &amp; Rooms)
+                  </strong>
+                  <span className="text-[10px] font-mono font-bold bg-rose-100 text-[#B91C1C] px-1.5 py-0.2 rounded">
+                    {banquetTaxRate}% GST (SAC 9972)
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] text-stone-600">
+                  <span>Banquet Subtotal:</span>
+                  <span className="font-mono font-medium">₹{banquetSubtotal.toLocaleString('en-IN')}</span>
+                </div>
+                {banquetDiscount > 0 && (
+                  <div className="flex justify-between text-[11px] text-emerald-600">
+                    <span>Discount:</span>
+                    <span className="font-mono">- ₹{banquetDiscount.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-[11px] text-stone-600">
+                  <span>GST ({banquetTaxRate}% = {banquetTaxRate / 2}% CGST + {banquetTaxRate / 2}% SGST):</span>
+                  <span className="font-mono font-semibold">+ ₹{banquetTaxAmount.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-[#B91C1C] pt-1 mt-1 border-t border-rose-100">
+                  <span>Banquet Total:</span>
+                  <span className="font-mono">₹{(banquetTaxable + banquetTaxAmount).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Real-time Financial Breakdown Ledger */}
           <div className="p-4 rounded-2xl bg-[#14281D] text-[#FBF9F5] space-y-2">
             <div className="flex justify-between text-xs text-stone-300">
@@ -1597,23 +1849,29 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
               </div>
             )}
             <div className="flex justify-between text-xs font-bold text-stone-200 pt-1 border-t border-white/10">
-              <span>Subtotal</span>
+              <span>Combined Subtotal</span>
               <span>₹{subtotal.toLocaleString('en-IN')}</span>
             </div>
-            {discount > 0 && (
+            {rawDiscount > 0 && (
               <div className="flex justify-between text-xs text-emerald-400">
                 <span>Discount Applied</span>
-                <span>- ₹{discount.toLocaleString('en-IN')}</span>
+                <span>- ₹{rawDiscount.toLocaleString('en-IN')}</span>
               </div>
             )}
-            {taxAmount > 0 && (
-              <div className="flex justify-between text-xs text-stone-300">
-                <span>GST Tax ({taxPercent}%)</span>
-                <span>+ ₹{taxAmount.toLocaleString('en-IN')}</span>
+            {foodTaxAmount > 0 && (
+              <div className="flex justify-between text-xs text-amber-300">
+                <span>Food GST ({foodTaxRate}% on ₹{foodTaxable.toLocaleString('en-IN')})</span>
+                <span>+ ₹{foodTaxAmount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+            {banquetTaxAmount > 0 && (
+              <div className="flex justify-between text-xs text-rose-300">
+                <span>Banquet GST ({banquetTaxRate}% on ₹{banquetTaxable.toLocaleString('en-IN')})</span>
+                <span>+ ₹{banquetTaxAmount.toLocaleString('en-IN')}</span>
               </div>
             )}
             <div className="flex justify-between text-sm font-bold text-[#E2C07D] pt-2 border-t border-white/10 font-brand">
-              <span>Grand Total</span>
+              <span>Combined Grand Total</span>
               <span>₹{grandTotal.toLocaleString('en-IN')}</span>
             </div>
             <div className="flex justify-between text-xs text-emerald-300 font-semibold pt-1">

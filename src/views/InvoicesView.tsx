@@ -7,6 +7,7 @@ import { PrintReceipt, PrintReceiptData } from '../components/PrintReceipt.tsx';
 import { printElement } from '../utils/print.ts';
 import { BrandLogo } from '../components/BrandLogo.tsx';
 import { OfficialBillSlip } from '../components/OfficialBillSlip.tsx';
+import { isFoodService } from '../utils/gstClassifier.ts';
 import {
   ReceiptText,
   Plus,
@@ -506,7 +507,16 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({ onOpenPaymentForInvo
                       ? new Date(activeInvoice.createdAt).toLocaleDateString('en-GB')
                       : new Date().toLocaleDateString('en-GB')
                   }
-                  billType="FOOD BILL"
+                  billType={(() => {
+                    const rawItems = Array.isArray((activeInvoice as any).parsedItems || JSON.parse(activeInvoice.items || '[]'))
+                      ? ((activeInvoice as any).parsedItems || JSON.parse(activeInvoice.items || '[]'))
+                      : [];
+                    const isFood = rawItems.some((it: any) => isFoodService(it.description || it.name));
+                    const isBanquet = rawItems.some((it: any) => !isFoodService(it.description || it.name));
+                    if (isFood && !isBanquet) return 'FOOD BILL';
+                    if (isBanquet && !isFood) return 'HOTEL & BANQUET BILL';
+                    return Number(activeInvoice.taxPercent) >= 12 ? 'HOTEL & BANQUET BILL' : 'FOOD BILL';
+                  })()}
                   customerName={(activeInvoice as any).parsedSnapshot?.customerName || activeInvoice.customer?.name || ''}
                   customerAddress={(activeInvoice as any).parsedSnapshot?.customerAddress || activeInvoice.customer?.address || 'Pakariyabar, Chandwa, Ara'}
                   customerMobile={(activeInvoice as any).parsedSnapshot?.customerMobile || activeInvoice.customer?.mobile || ''}

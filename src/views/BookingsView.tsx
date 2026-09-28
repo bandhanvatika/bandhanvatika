@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { PrintReceipt } from '../components/PrintReceipt.tsx';
 import { BookingSlip } from '../components/BookingSlip.tsx';
 import { OfficialBillSlip } from '../components/OfficialBillSlip.tsx';
+import { DualBillModal } from '../components/DualBillModal.tsx';
 import { printElement } from '../utils/print.ts';
 import {
   CalendarCheck,
@@ -31,6 +32,8 @@ import {
   Printer,
   Receipt,
   FileText,
+  Utensils,
+  Layers,
 } from 'lucide-react';
 
 interface BookingsViewProps {
@@ -67,6 +70,8 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
   const [printReceiptData, setPrintReceiptData] = useState<any | null>(null);
   const [printBookingSlipBooking, setPrintBookingSlipBooking] = useState<any | null>(null);
   const [printBillBooking, setPrintBillBooking] = useState<any | null>(null);
+  const [dualBillBooking, setDualBillBooking] = useState<any | null>(null);
+  const [dualBillTab, setDualBillTab] = useState<'FOOD' | 'BANQUET' | 'SLIP' | 'BOTH'>('FOOD');
 
   // Status Transition Modal
   const [statusTransitionModal, setStatusTransitionModal] = useState<Booking | null>(null);
@@ -133,22 +138,22 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
     }
   };
 
-  const handleOpenBookingSlip = async (b: any) => {
+  const openDualBill = async (b: any, tab: 'FOOD' | 'BANQUET' | 'SLIP' | 'BOTH' = 'FOOD') => {
     let full = b;
     if (!b.services || !b.customer?.address) {
       const res = await apiRequest<any>(`/bookings/${b.id}`);
       if (res.success && res.data) full = res.data;
     }
-    setPrintBookingSlipBooking(full);
+    setDualBillBooking(full);
+    setDualBillTab(tab);
   };
 
-  const handleOpenBill = async (b: any) => {
-    let full = b;
-    if (!b.services || !b.customer?.address) {
-      const res = await apiRequest<any>(`/bookings/${b.id}`);
-      if (res.success && res.data) full = res.data;
-    }
-    setPrintBillBooking(full);
+  const handleOpenBookingSlip = async (b: any) => {
+    openDualBill(b, 'SLIP');
+  };
+
+  const handleOpenBill = async (b: any, tab: 'FOOD' | 'BANQUET' | 'SLIP' | 'BOTH' = 'FOOD') => {
+    openDualBill(b, tab);
   };
 
   const openEditModal = async (b: any) => {
@@ -555,22 +560,31 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                       </span>
                     </td>
                     <td className="py-3 px-3 text-right space-x-1 whitespace-nowrap">
-                      {/* Print Booking Slip */}
+                      {/* 1. Print Satta Booking Slip */}
                       <button
-                        onClick={() => handleOpenBookingSlip(b)}
-                        title="Print Booking Slip (बुकिंग स्लिप / सट्टा पर्ची)"
-                        className="p-1.5 rounded-lg text-emerald-700 hover:bg-emerald-50 transition-colors"
+                        onClick={() => openDualBill(b, 'SLIP')}
+                        title="Print Satta Booking Slip (सट्टा पर्ची)"
+                        className="p-1.5 rounded-lg text-emerald-800 hover:bg-emerald-50 transition-colors"
                       >
                         <FileText className="w-4 h-4" />
                       </button>
 
-                      {/* Print Bill */}
+                      {/* 2. Print Food Bill (5% GST) */}
                       <button
-                        onClick={() => handleOpenBill(b)}
-                        title="View / Print Bill (बिल / Tax Invoice)"
+                        onClick={() => openDualBill(b, 'FOOD')}
+                        title="Print Food Bill (भोजन बिल @ 5% GST)"
+                        className="p-1.5 rounded-lg text-amber-700 hover:bg-amber-50 transition-colors"
+                      >
+                        <Utensils className="w-4 h-4" />
+                      </button>
+
+                      {/* 3. Print Banquet Bill (18% GST) */}
+                      <button
+                        onClick={() => openDualBill(b, 'BANQUET')}
+                        title="Print Banquet & Rooms Bill (हॉल व रूम बिल @ 18% GST)"
                         className="p-1.5 rounded-lg text-[#B91C1C] hover:bg-rose-50 transition-colors"
                       >
-                        <Receipt className="w-4 h-4" />
+                        <Landmark className="w-4 h-4" />
                       </button>
 
                       {/* View Details */}
@@ -1012,23 +1026,45 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                 {/* 1. PRINT BOOKING SLIP */}
                 <button
                   type="button"
-                  onClick={() => handleOpenBookingSlip(detailBooking)}
+                  onClick={() => openDualBill(detailBooking, 'SLIP')}
                   className="px-3.5 py-1.5 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer"
                   title="Print Satta Booking Slip (बुकिंग स्लिप / सट्टा पर्ची)"
                 >
                   <FileText className="w-3.5 h-3.5 text-[#C5A059]" />
-                  <span>Print Booking Slip (बुकिंग स्लिप)</span>
+                  <span>सट्टा पर्ची (Booking Slip)</span>
                 </button>
 
-                {/* 2. PRINT BILL */}
+                {/* 2. PRINT FOOD BILL */}
                 <button
                   type="button"
-                  onClick={() => handleOpenBill(detailBooking)}
-                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-[#B91C1C] border border-[#B91C1C] text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer"
-                  title="View & Print Official Bill (बिल / Tax Invoice)"
+                  onClick={() => openDualBill(detailBooking, 'FOOD')}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer"
+                  title="View & Print Food Bill (भोजन बिल @ 5% GST)"
                 >
-                  <Receipt className="w-3.5 h-3.5 text-[#B91C1C]" />
-                  <span>View / Print Bill (बिल)</span>
+                  <Utensils className="w-3.5 h-3.5" />
+                  <span>भोजन बिल (5% GST)</span>
+                </button>
+
+                {/* 3. PRINT BANQUET BILL */}
+                <button
+                  type="button"
+                  onClick={() => openDualBill(detailBooking, 'BANQUET')}
+                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-[#B91C1C] border border-[#B91C1C] text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer"
+                  title="View & Print Banquet Bill (हॉल बिल @ 18% GST)"
+                >
+                  <Landmark className="w-3.5 h-3.5 text-[#B91C1C]" />
+                  <span>हॉल बिल (18% GST)</span>
+                </button>
+
+                {/* 4. BOTH BILLS */}
+                <button
+                  type="button"
+                  onClick={() => openDualBill(detailBooking, 'BOTH')}
+                  className="px-3.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer"
+                  title="View Both Bills Together (दोनों बिल एक साथ देखें)"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>दोनों बिल (Both)</span>
                 </button>
 
                 {hasRole(['OWNER', 'MANAGER', 'RECEPTIONIST']) &&
@@ -1447,175 +1483,14 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
         </Modal>
       )}
       {/* Official Receipt Preview & Print Modal */}
-      {/* 1. Official Booking Slip Modal (बुकिंग स्लिप / सट्टा पर्ची) */}
-      {printBookingSlipBooking && (
-        <Modal
-          isOpen={!!printBookingSlipBooking}
-          onClose={() => setPrintBookingSlipBooking(null)}
-          title={`Booking Slip (सट्टा पर्ची) #${printBookingSlipBooking.bookingNumber}`}
-          subtitle="Official Banquet Satta Booking Confirmation Voucher"
-          maxWidth="4xl"
-        >
-          <div className="space-y-4">
-            <div className="max-h-[75vh] overflow-y-auto rounded-xl border border-stone-200 p-2 bg-stone-100">
-              <div id="bandhan-booking-slip-preview">
-                <BookingSlip
-                  booking={printBookingSlipBooking}
-                  customer={printBookingSlipBooking.customer}
-                  showPreviewInUI={true}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center pt-2 border-t border-stone-200 no-print">
-              <span className="text-xs text-stone-500 font-medium">
-                📜 Official Booking Slip with 7 Satta Terms &amp; Conditions
-              </span>
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    printElement(
-                      'bandhan-booking-slip-preview',
-                      `Booking_Slip_${printBookingSlipBooking.bookingNumber}`
-                    )
-                  }
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#14281D] hover:bg-[#1a3527] text-[#F3E7C4] text-xs font-bold shadow-xs cursor-pointer transition-all"
-                >
-                  <Printer className="w-3.5 h-3.5 text-[#C5A059]" />
-                  <span>Print Booking Slip (बुकिंग स्लिप प्रिंट करें)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPrintBookingSlipBooking(null)}
-                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold cursor-pointer transition-all"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* 2. Official Bill Modal (बिल / Red Booklet Tax Invoice) */}
-      {printBillBooking && (
-        <Modal
-          isOpen={!!printBillBooking}
-          onClose={() => setPrintBillBooking(null)}
-          title={`Official Bill (बिल) #${printBillBooking.bookingNumber?.replace('BV-BKG-', 'BKG-')}`}
-          subtitle="Red Booklet Food & Banquet Bill"
-          maxWidth="4xl"
-        >
-          <div className="space-y-4">
-            <div className="max-h-[75vh] overflow-y-auto rounded-xl border border-stone-200 p-2 bg-stone-100">
-              <div id="bandhan-booking-bill-preview">
-                {(() => {
-                  const linkedInv = printBillBooking.invoice || (printBillBooking.invoices && printBillBooking.invoices[0]);
-                  const billNo = linkedInv?.invoiceNumber?.replace('INV-', '') || printBillBooking.bookingNumber?.replace('BV-BKG-', 'BKG-') || '118';
-                  const billDate = linkedInv?.invoiceDate
-                    ? new Date(linkedInv.invoiceDate).toLocaleDateString('en-GB')
-                    : printBillBooking.eventDate
-                    ? new Date(printBillBooking.eventDate).toLocaleDateString('en-GB')
-                    : new Date().toLocaleDateString('en-GB');
-
-                  let billItems: any[] = [];
-                  if (linkedInv?.items) {
-                    try {
-                      const parsed = typeof linkedInv.items === 'string' ? JSON.parse(linkedInv.items) : linkedInv.items;
-                      if (Array.isArray(parsed) && parsed.length > 0) {
-                        billItems = parsed.map((it: any) => ({
-                          description: it.description || 'Banquet & Food Service',
-                          quantity: it.quantity || it.qty || 1,
-                          rate: Number(it.rate || it.amount || 0),
-                          amount: Number(it.amount || 0),
-                        }));
-                      }
-                    } catch {}
-                  }
-
-                  if (billItems.length === 0) {
-                    let sList: any[] = [];
-                    if (Array.isArray(printBillBooking.services)) sList = printBillBooking.services;
-                    else if (typeof printBillBooking.services === 'string') {
-                      try {
-                        sList = JSON.parse(printBillBooking.services);
-                      } catch {}
-                    }
-                    if (sList.length > 0) {
-                      billItems = sList.map((s) => ({
-                        description: s.name || s.description,
-                        quantity: Number(s.quantity || 1),
-                        rate: Number(s.rate || 0),
-                        amount: Number(s.amount || (s.quantity || 1) * (s.rate || 0)),
-                      }));
-                    }
-                  }
-
-                  if (billItems.length === 0) {
-                    billItems = [
-                      {
-                        description: `${printBillBooking.eventType} Banquet & Facilities Tariff`,
-                        quantity: 1,
-                        rate: Number(printBillBooking.grandTotal || 0),
-                        amount: Number(printBillBooking.grandTotal || 0),
-                      },
-                    ];
-                  }
-
-                  return (
-                    <OfficialBillSlip
-                      billNumber={billNo}
-                      date={billDate}
-                      billType={
-                        printBillBooking.eventType?.toLowerCase().includes('jeevika')
-                          ? 'FOOD BILL'
-                          : 'HOTEL / FOOD BILL'
-                      }
-                      customerName={printBillBooking.customer?.name || ''}
-                      customerAddress={printBillBooking.customer?.address || 'Pakariyabar, Chandwa, Ara'}
-                      customerMobile={printBillBooking.customer?.mobile || ''}
-                      customerGstin={(printBillBooking.customer as any)?.gstin || ''}
-                      items={billItems}
-                      subtotal={Number(linkedInv?.subtotal || printBillBooking.subtotal || printBillBooking.grandTotal || 0)}
-                      discount={Number(linkedInv?.discount || printBillBooking.discount || 0)}
-                      taxPercent={Number(linkedInv?.taxPercent || printBillBooking.taxPercent || 5)}
-                      grandTotal={Number(linkedInv?.grandTotal || printBillBooking.grandTotal || 0)}
-                      paidAmount={Number(linkedInv?.paidAmount || printBillBooking.paidAmount || 0)}
-                      balanceAmount={Number(linkedInv?.balanceAmount || printBillBooking.balanceAmount || 0)}
-                      showTerms={false}
-                    />
-                  );
-                })()}
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center pt-2 border-t border-stone-200 no-print">
-              <span className="text-xs text-stone-500 font-medium">
-                🧾 Official Red Booklet Bill with GST &amp; Visit Again Seal
-              </span>
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    printElement('bandhan-booking-bill-preview', `Bill_${printBillBooking.bookingNumber}`)
-                  }
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-[#B91C1C] hover:bg-red-800 text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print Bill (बिल प्रिंट करें)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPrintBillBooking(null)}
-                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold cursor-pointer transition-all"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </Modal>
+      {/* Dual Bill & Satta Documents Modal (भोजन 5% GST + हॉल 18% GST + सट्टा पर्ची) */}
+      {dualBillBooking && (
+        <DualBillModal
+          isOpen={!!dualBillBooking}
+          onClose={() => setDualBillBooking(null)}
+          booking={dualBillBooking}
+          defaultTab={dualBillTab}
+        />
       )}
 
       {/* 3. Official Payment Receipt Preview & Print Modal */}
