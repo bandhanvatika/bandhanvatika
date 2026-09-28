@@ -34,10 +34,13 @@ export const BrandCrestImg: React.FC<{
         height: '56px',
         maxWidth: '56px',
         maxHeight: '56px',
+        minWidth: '56px',
+        minHeight: '56px',
         objectFit: 'contain',
+        display: 'inline-block',
         ...style,
       }}
-      className={`rounded-full object-contain shrink-0 ${isPrint ? 'border border-[#C5A059]/40' : ''} ${className}`}
+      className={`brand-logo-img rounded-full object-contain shrink-0 ${isPrint ? 'border border-[#C5A059]/40' : ''} ${className}`}
       loading="eager"
     />
   );

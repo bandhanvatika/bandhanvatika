@@ -1,8 +1,12 @@
 /**
- * Utility to reliably print any DOM element without blank pages,
- * overflow clipping, modal/shell interference, or missing styles.
+ * Robust print utility for Bandhan Vatika documents (Booking Slip, Red Bill, Receipts).
+ * Ensures styles are preserved, base URL is correct, images are constrained,
+ * and no overflowing onto extra blank pages occurs.
  */
-export function printElement(
+
+let cachedStylesheetCss = '';
+
+export async function printElement(
   target: HTMLElement | string,
   title: string = 'Bandhan Vatika Document'
 ) {
@@ -19,7 +23,49 @@ export function printElement(
     return;
   }
 
-  // Create a hidden iframe for isolated printing
+  // 1. Gather all CSS rules
+  let inlineCss = '';
+  try {
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        const rules = Array.from(sheet.cssRules || []);
+        inlineCss += rules.map((r) => r.cssText).join('\n') + '\n';
+      } catch {
+        // Cross-origin or restricted stylesheet access
+      }
+    }
+  } catch {
+    // Ignore error
+  }
+
+  // 2. If inlineCss is empty or minimal, fetch the linked stylesheets
+  if (!inlineCss || inlineCss.length < 500) {
+    if (cachedStylesheetCss) {
+      inlineCss = cachedStylesheetCss;
+    } else {
+      try {
+        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+        const fetches = links.map(async (link) => {
+          if (link.href && link.href.startsWith(window.location.origin)) {
+            try {
+              const res = await fetch(link.href);
+              if (res.ok) return await res.text();
+            } catch {}
+          }
+          return '';
+        });
+        const results = await Promise.all(fetches);
+        cachedStylesheetCss = results.join('\n');
+        inlineCss = cachedStylesheetCss;
+      } catch {}
+    }
+  }
+
+  // Collect link and style tags for fallback
+  const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'));
+  const linksHtml = styleTags.map((el) => el.outerHTML).join('\n');
+
+  // Create isolated iframe
   const iframe = document.createElement('iframe');
   iframe.setAttribute(
     'style',
@@ -34,26 +80,6 @@ export function printElement(
     return;
   }
 
-  // 1. Extract all loaded CSS rules from document.styleSheets for instant synchronous styling
-  let inlineCss = '';
-  try {
-    for (const sheet of Array.from(document.styleSheets)) {
-      try {
-        const rules = Array.from(sheet.cssRules || []);
-        inlineCss += rules.map((r) => r.cssText).join('\n') + '\n';
-      } catch {
-        // Cross-origin stylesheet security restriction (e.g. external Google Fonts)
-      }
-    }
-  } catch {
-    // Ignore error
-  }
-
-  // 2. Also collect all link[rel="stylesheet"] and style tags from parent
-  const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'));
-  const linksHtml = styleTags.map((el) => el.outerHTML).join('\n');
-
-  // 3. Clone target element HTML
   const contentHtml = element.outerHTML;
 
   iframeDoc.open();
@@ -61,11 +87,12 @@ export function printElement(
     <!DOCTYPE html>
     <html lang="en">
       <head>
+        <base href="${window.location.origin}/" />
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${title}</title>
         ${linksHtml}
-        ${inlineCss ? `<style id="inlined-tailwind-styles">${inlineCss}</style>` : ''}
+        ${inlineCss ? `<style id="inlined-all-styles">${inlineCss}</style>` : ''}
         <style>
           @page {
             size: A4 portrait;
@@ -89,7 +116,23 @@ export function printElement(
           .font-brand {
             font-family: 'Cinzel', serif !important;
           }
-          /* Ensure print target fills A4 properly and avoids accidental page splits */
+
+          /* ABSOLUTE GUARANTEE: Logo can never explode in print */
+          img {
+            max-width: 100%;
+          }
+          img[src*="brand-logo"], .brand-logo-img {
+            width: 56px !important;
+            height: 56px !important;
+            max-width: 56px !important;
+            max-height: 56px !important;
+            min-width: 56px !important;
+            min-height: 56px !important;
+            object-fit: contain !important;
+            display: inline-block !important;
+          }
+
+          /* Ensure single page fit and proper container layout */
           .print-receipt-container,
           .official-bill-wrapper,
           .booking-slip-wrapper,
@@ -112,6 +155,7 @@ export function printElement(
             page-break-after: avoid !important;
             break-inside: avoid !important;
           }
+
           .no-print {
             display: none !important;
           }
@@ -126,7 +170,7 @@ export function printElement(
   `);
   iframeDoc.close();
 
-  // 4. Safely execute print after styles, fonts, and images are ready
+  // Safely trigger print after fonts & images are ready
   let printed = false;
   const executePrint = () => {
     if (printed) return;
@@ -146,7 +190,6 @@ export function printElement(
     }
   };
 
-  // Wait for fonts & images
   const fontPromise = (iframeDoc as any).fonts?.ready || Promise.resolve();
   const images = Array.from(iframeDoc.images || []);
   const imgPromises = images.map((img) => {
@@ -157,22 +200,12 @@ export function printElement(
     });
   });
 
-  // Collect links in iframe
-  const links = Array.from(iframeDoc.querySelectorAll('link[rel="stylesheet"]'));
-  const linkPromises = links.map((link) => {
-    return new Promise((resolve) => {
-      link.addEventListener('load', resolve);
-      link.addEventListener('error', resolve);
-    });
-  });
-
-  // Safety fallback timeout: max 800ms
   const timer = setTimeout(() => {
     executePrint();
-  }, 800);
+  }, 1000);
 
-  Promise.all([fontPromise, ...imgPromises, ...linkPromises]).then(() => {
+  Promise.all([fontPromise, ...imgPromises]).then(() => {
     clearTimeout(timer);
-    setTimeout(executePrint, 120);
+    setTimeout(executePrint, 150);
   });
 }
