@@ -1,6 +1,6 @@
 /**
  * Utility to reliably print any DOM element without blank pages,
- * overflow clipping, or modal/shell interference.
+ * overflow clipping, modal/shell interference, or missing styles.
  */
 export function printElement(
   target: HTMLElement | string,
@@ -23,7 +23,7 @@ export function printElement(
   const iframe = document.createElement('iframe');
   iframe.setAttribute(
     'style',
-    'position:fixed;top:-10000px;left:-10000px;width:1000px;height:1400px;border:none;opacity:0;pointer-events:none;'
+    'position:fixed;top:-10000px;left:-10000px;width:1050px;height:1480px;border:none;opacity:0;pointer-events:none;'
   );
   document.body.appendChild(iframe);
 
@@ -34,11 +34,26 @@ export function printElement(
     return;
   }
 
-  // Collect all stylesheets and style tags from the current document
-  const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'));
-  const stylesHtml = styleTags.map((el) => el.outerHTML).join('\n');
+  // 1. Extract all loaded CSS rules from document.styleSheets for instant synchronous styling
+  let inlineCss = '';
+  try {
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        const rules = Array.from(sheet.cssRules || []);
+        inlineCss += rules.map((r) => r.cssText).join('\n') + '\n';
+      } catch {
+        // Cross-origin stylesheet security restriction (e.g. external Google Fonts)
+      }
+    }
+  } catch {
+    // Ignore error
+  }
 
-  // Clone target element HTML
+  // 2. Also collect all link[rel="stylesheet"] and style tags from parent
+  const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'));
+  const linksHtml = styleTags.map((el) => el.outerHTML).join('\n');
+
+  // 3. Clone target element HTML
   const contentHtml = element.outerHTML;
 
   iframeDoc.open();
@@ -49,11 +64,12 @@ export function printElement(
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>${title}</title>
-        ${stylesHtml}
+        ${linksHtml}
+        ${inlineCss ? `<style id="inlined-tailwind-styles">${inlineCss}</style>` : ''}
         <style>
           @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 5mm 8mm;
           }
           * {
             -webkit-print-color-adjust: exact !important;
@@ -65,15 +81,15 @@ export function printElement(
             color: #1c1917 !important;
             margin: 0 !important;
             padding: 0 !important;
+            width: 100% !important;
             height: auto !important;
-            min-height: 100% !important;
             overflow: visible !important;
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
           }
           .font-brand {
             font-family: 'Cinzel', serif !important;
           }
-          /* Ensure print target is visible and fills A4 properly */
+          /* Ensure print target fills A4 properly and avoids accidental page splits */
           .print-receipt-container,
           .official-bill-wrapper,
           #bandhan-print-receipt,
@@ -86,6 +102,9 @@ export function printElement(
             padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-inside: avoid !important;
           }
           .no-print {
             display: none !important;
@@ -101,8 +120,11 @@ export function printElement(
   `);
   iframeDoc.close();
 
-  // Give styles and fonts 250ms to render inside the iframe before opening print dialog
-  setTimeout(() => {
+  // 4. Safely execute print after styles, fonts, and images are ready
+  let printed = false;
+  const executePrint = () => {
+    if (printed) return;
+    printed = true;
     try {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
@@ -110,12 +132,41 @@ export function printElement(
       console.error('Iframe print error, falling back to window.print():', e);
       window.print();
     } finally {
-      // Clean up iframe after printing
       setTimeout(() => {
         if (document.body.contains(iframe)) {
           document.body.removeChild(iframe);
         }
-      }, 2000);
+      }, 3000);
     }
-  }, 250);
+  };
+
+  // Wait for fonts & images
+  const fontPromise = (iframeDoc as any).fonts?.ready || Promise.resolve();
+  const images = Array.from(iframeDoc.images || []);
+  const imgPromises = images.map((img) => {
+    if (img.complete) return Promise.resolve();
+    return new Promise((resolve) => {
+      img.onload = resolve;
+      img.onerror = resolve;
+    });
+  });
+
+  // Collect links in iframe
+  const links = Array.from(iframeDoc.querySelectorAll('link[rel="stylesheet"]'));
+  const linkPromises = links.map((link) => {
+    return new Promise((resolve) => {
+      link.addEventListener('load', resolve);
+      link.addEventListener('error', resolve);
+    });
+  });
+
+  // Safety fallback timeout: max 800ms
+  const timer = setTimeout(() => {
+    executePrint();
+  }, 800);
+
+  Promise.all([fontPromise, ...imgPromises, ...linkPromises]).then(() => {
+    clearTimeout(timer);
+    setTimeout(executePrint, 120);
+  });
 }

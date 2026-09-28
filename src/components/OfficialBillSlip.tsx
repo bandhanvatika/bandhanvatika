@@ -97,12 +97,14 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
         @media print {
           @page {
             size: A4 portrait;
-            margin: 6mm 8mm;
+            margin: 5mm 8mm;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           body {
             background: white !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
           }
           .official-bill-wrapper {
             width: 100% !important;

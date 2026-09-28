@@ -14,14 +14,29 @@ export interface BrandLogoProps {
   showTagline?: boolean;
 }
 
-export const BrandCrestImg: React.FC<{ className?: string; isPrint?: boolean }> = ({
+export const BrandCrestImg: React.FC<{
+  className?: string;
+  isPrint?: boolean;
+  style?: React.CSSProperties;
+}> = ({
   className = 'w-10 h-10',
   isPrint = false,
+  style,
 }) => {
   return (
     <img
       src="/brand-logo.png"
       alt="Bandhan Vatika Royal Crest"
+      width={56}
+      height={56}
+      style={{
+        width: '56px',
+        height: '56px',
+        maxWidth: '56px',
+        maxHeight: '56px',
+        objectFit: 'contain',
+        ...style,
+      }}
       className={`rounded-full object-contain shrink-0 ${isPrint ? 'border border-[#C5A059]/40' : ''} ${className}`}
       loading="eager"
     />
