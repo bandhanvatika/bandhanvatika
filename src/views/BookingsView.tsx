@@ -937,7 +937,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                               booking: detailBooking,
                               invoiceTotal: detailBooking.grandTotal,
                               balanceAfterPayment: detailBooking.balanceAmount,
-                              showTerms: true,
+                              showTerms: false,
                             };
                             setPrintReceiptData(data);
                             setTimeout(() => {
@@ -1510,59 +1510,83 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
           <div className="space-y-4">
             <div className="max-h-[75vh] overflow-y-auto rounded-xl border border-stone-200 p-2 bg-stone-100">
               <div id="bandhan-booking-bill-preview">
-                <OfficialBillSlip
-                  billNumber={printBillBooking.bookingNumber?.replace('BV-BKG-', 'BKG-') || '118'}
-                  date={
-                    printBillBooking.eventDate
-                      ? new Date(printBillBooking.eventDate).toLocaleDateString('en-GB')
-                      : new Date().toLocaleDateString('en-GB')
-                  }
-                  billType={
-                    printBillBooking.eventType?.toLowerCase().includes('jeevika')
-                      ? 'FOOD BILL'
-                      : 'HOTEL / FOOD BILL'
-                  }
-                  customerName={printBillBooking.customer?.name || ''}
-                  customerAddress={printBillBooking.customer?.address || 'Pakariyabar, Chandwa, Ara'}
-                  customerMobile={printBillBooking.customer?.mobile || ''}
-                  customerGstin={(printBillBooking.customer as any)?.gstin || ''}
-                  items={
-                    (() => {
-                      let sList: any[] = [];
-                      if (Array.isArray(printBillBooking.services)) sList = printBillBooking.services;
-                      else if (typeof printBillBooking.services === 'string') {
-                        try {
-                          sList = JSON.parse(printBillBooking.services);
-                        } catch {
-                          sList = [];
-                        }
-                      }
-                      if (sList.length > 0) {
-                        return sList.map((s) => ({
-                          description: s.name || s.description,
-                          quantity: Number(s.quantity || 1),
-                          rate: Number(s.rate || 0),
-                          amount: Number(s.amount || (s.quantity || 1) * (s.rate || 0)),
+                {(() => {
+                  const linkedInv = printBillBooking.invoice || (printBillBooking.invoices && printBillBooking.invoices[0]);
+                  const billNo = linkedInv?.invoiceNumber?.replace('INV-', '') || printBillBooking.bookingNumber?.replace('BV-BKG-', 'BKG-') || '118';
+                  const billDate = linkedInv?.invoiceDate
+                    ? new Date(linkedInv.invoiceDate).toLocaleDateString('en-GB')
+                    : printBillBooking.eventDate
+                    ? new Date(printBillBooking.eventDate).toLocaleDateString('en-GB')
+                    : new Date().toLocaleDateString('en-GB');
+
+                  let billItems: any[] = [];
+                  if (linkedInv?.items) {
+                    try {
+                      const parsed = typeof linkedInv.items === 'string' ? JSON.parse(linkedInv.items) : linkedInv.items;
+                      if (Array.isArray(parsed) && parsed.length > 0) {
+                        billItems = parsed.map((it: any) => ({
+                          description: it.description || 'Banquet & Food Service',
+                          quantity: it.quantity || it.qty || 1,
+                          rate: Number(it.rate || it.amount || 0),
+                          amount: Number(it.amount || 0),
                         }));
                       }
-                      return [
-                        {
-                          description: `${printBillBooking.eventType} Banquet & Facilities Tariff`,
-                          quantity: 1,
-                          rate: Number(printBillBooking.grandTotal || 0),
-                          amount: Number(printBillBooking.grandTotal || 0),
-                        },
-                      ];
-                    })()
+                    } catch {}
                   }
-                  subtotal={Number(printBillBooking.subtotal || printBillBooking.grandTotal || 0)}
-                  discount={Number(printBillBooking.discount || 0)}
-                  taxPercent={Number(printBillBooking.taxPercent || 5)}
-                  grandTotal={Number(printBillBooking.grandTotal || 0)}
-                  paidAmount={Number(printBillBooking.paidAmount || 0)}
-                  balanceAmount={Number(printBillBooking.balanceAmount || 0)}
-                  showTerms={false}
-                />
+
+                  if (billItems.length === 0) {
+                    let sList: any[] = [];
+                    if (Array.isArray(printBillBooking.services)) sList = printBillBooking.services;
+                    else if (typeof printBillBooking.services === 'string') {
+                      try {
+                        sList = JSON.parse(printBillBooking.services);
+                      } catch {}
+                    }
+                    if (sList.length > 0) {
+                      billItems = sList.map((s) => ({
+                        description: s.name || s.description,
+                        quantity: Number(s.quantity || 1),
+                        rate: Number(s.rate || 0),
+                        amount: Number(s.amount || (s.quantity || 1) * (s.rate || 0)),
+                      }));
+                    }
+                  }
+
+                  if (billItems.length === 0) {
+                    billItems = [
+                      {
+                        description: `${printBillBooking.eventType} Banquet & Facilities Tariff`,
+                        quantity: 1,
+                        rate: Number(printBillBooking.grandTotal || 0),
+                        amount: Number(printBillBooking.grandTotal || 0),
+                      },
+                    ];
+                  }
+
+                  return (
+                    <OfficialBillSlip
+                      billNumber={billNo}
+                      date={billDate}
+                      billType={
+                        printBillBooking.eventType?.toLowerCase().includes('jeevika')
+                          ? 'FOOD BILL'
+                          : 'HOTEL / FOOD BILL'
+                      }
+                      customerName={printBillBooking.customer?.name || ''}
+                      customerAddress={printBillBooking.customer?.address || 'Pakariyabar, Chandwa, Ara'}
+                      customerMobile={printBillBooking.customer?.mobile || ''}
+                      customerGstin={(printBillBooking.customer as any)?.gstin || ''}
+                      items={billItems}
+                      subtotal={Number(linkedInv?.subtotal || printBillBooking.subtotal || printBillBooking.grandTotal || 0)}
+                      discount={Number(linkedInv?.discount || printBillBooking.discount || 0)}
+                      taxPercent={Number(linkedInv?.taxPercent || printBillBooking.taxPercent || 5)}
+                      grandTotal={Number(linkedInv?.grandTotal || printBillBooking.grandTotal || 0)}
+                      paidAmount={Number(linkedInv?.paidAmount || printBillBooking.paidAmount || 0)}
+                      balanceAmount={Number(linkedInv?.balanceAmount || printBillBooking.balanceAmount || 0)}
+                      showTerms={false}
+                    />
+                  );
+                })()}
               </div>
             </div>
 

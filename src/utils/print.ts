@@ -95,6 +95,10 @@ export function printElement(
           .booking-slip-wrapper,
           #bandhan-print-receipt,
           #bandhan-booking-slip,
+          #bandhan-new-booking-slip,
+          #bandhan-new-booking-bill,
+          #bandhan-booking-slip-preview,
+          #bandhan-booking-bill-preview,
           #printable-invoice,
           #quotation-print-voucher {
             display: block !important;

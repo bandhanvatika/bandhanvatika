@@ -357,41 +357,6 @@ export const OfficialBillSlip: React.FC<OfficialBillProps> = ({
         </div>
 
       </div>
-
-      {/* =========================================================================
-          OFFICIAL TERMS & CONDITIONS (हस्तलिखित 7 नियम व शर्तें)
-         ========================================================================= */}
-      {showTerms && (
-        <div className="mt-2.5 p-3 border-[1.5px] border-stone-400 rounded-lg bg-stone-50/70 text-stone-800 text-xs">
-          <div className="font-bold text-stone-900 text-xs pb-1 mb-1.5 border-b border-stone-300 flex items-center justify-between">
-            <span>नोट :- (नियम व शर्तें / Terms &amp; Conditions)</span>
-            <span className="text-[10px] font-normal text-stone-500">बंधन वाटिका, पकड़ीयावर, चन्दवाँ, आरा</span>
-          </div>
-
-          <ol className="list-decimal list-inside space-y-0.5 text-[10.5px] sm:text-[11px] leading-snug font-medium text-stone-800">
-            {OFFICIAL_TERMS_HINDI.map((rule, idx) => (
-              <li key={idx} className="pl-0.5">
-                <span className="text-stone-900">{rule}</span>
-              </li>
-            ))}
-          </ol>
-
-          {/* Signatures at bottom of terms */}
-          <div className="mt-3 pt-2 border-t border-dashed border-stone-300 flex justify-between items-end text-xs">
-            <div className="text-center">
-              <div className="h-5 border-b border-stone-500 w-36 mb-0.5" />
-              <div className="font-bold text-stone-800 text-[11px]">ह० सट्टेदार</div>
-              <div className="text-[9px] text-stone-500">(Customer Signature)</div>
-            </div>
-
-            <div className="text-center">
-              <div className="h-5 border-b border-stone-500 w-36 mb-0.5" />
-              <div className="font-bold text-stone-800 text-[11px]">ह० प्रबंधक</div>
-              <div className="text-[9px] text-stone-500">For Bandhan Vatika</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

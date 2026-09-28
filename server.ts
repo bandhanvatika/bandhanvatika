@@ -1421,6 +1421,7 @@ app.get('/api/v1/bookings', authenticate, async (req: AuthenticatedRequest, res:
     const allHalls = await db.select().from(halls);
     const allBookingRooms = await db.select().from(bookingRooms);
     const allRooms = await db.select().from(rooms);
+    const allInvoices = await db.select().from(invoices);
 
     const cMap = new Map(allCust.map((c) => [c.id, c]));
     const hMap = new Map(allHalls.map((h) => [h.id, h]));
@@ -1435,6 +1436,16 @@ app.get('/api/v1/bookings', authenticate, async (req: AuthenticatedRequest, res:
       brMap.set(br.bookingId, list);
     }
 
+    // Group invoices by bookingId
+    const invMap = new Map<string, any[]>();
+    for (const inv of allInvoices) {
+      if (inv.bookingId) {
+        const list = invMap.get(inv.bookingId) || [];
+        list.push(inv);
+        invMap.set(inv.bookingId, list);
+      }
+    }
+
     let enriched = allBookings.map((b) => {
       let parsedServices: any[] = [];
       try {
@@ -1443,12 +1454,17 @@ app.get('/api/v1/bookings', authenticate, async (req: AuthenticatedRequest, res:
         parsedServices = [];
       }
 
+      const bInvs = invMap.get(b.id) || [];
+      const activeInv = bInvs.find((i: any) => i.status !== 'CANCELLED') || bInvs[0] || null;
+
       return {
         ...b,
         customer: cMap.get(b.customerId) || null,
         hall: b.hallId ? hMap.get(b.hallId) || null : null,
         rooms: brMap.get(b.id) || [],
         parsedServices,
+        invoice: activeInv,
+        invoices: bInvs,
       };
     });
 
@@ -1909,31 +1925,33 @@ app.post('/api/v1/bookings', authenticate, requireRoles(['OWNER', 'MANAGER', 'RE
         });
       }
 
-      // 3.9 If advance payment was made, generate invoice and receipt
-      if (Number(advancePayment) > 0) {
-        const invCount = (await tx.select().from(invoices)).length + 1;
-        const invoiceNumber = `INV-${year}-${String(invCount).padStart(4, '0')}`;
-        const invoiceId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`;
+      // 3.9 Always generate invoice (Bill) for every booking
+      const invCount = (await tx.select().from(invoices)).length + 1;
+      const invoiceNumber = `INV-${year}-${String(invCount).padStart(4, '0')}`;
+      const invoiceId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`;
 
-        await tx.insert(invoices).values({
-          id: invoiceId,
-          invoiceNumber,
-          customerId,
-          bookingId,
-          eventDate,
-          items: JSON.stringify(fin.items),
-          subtotal: fin.subtotal,
-          discount: fin.discount,
-          taxPercent: fin.taxPercent,
-          taxAmount: fin.taxAmount,
-          grandTotal: fin.grandTotal,
-          paidAmount: fin.paidAmount,
-          balanceAmount: fin.balanceAmount,
-          status: Number(fin.balanceAmount) === 0 ? 'PAID' : 'PARTIAL',
-          dueDate: eventDate,
-          terms: BANDHAN_VATIKA_TERMS,
-          notes: `Invoice generated for Booking #${bookingNumber}`,
-        });
+      const [newInvoice] = await tx.insert(invoices).values({
+        id: invoiceId,
+        invoiceNumber,
+        customerId,
+        bookingId,
+        eventDate,
+        items: JSON.stringify(fin.items),
+        subtotal: fin.subtotal,
+        discount: fin.discount,
+        taxPercent: fin.taxPercent,
+        taxAmount: fin.taxAmount,
+        grandTotal: fin.grandTotal,
+        paidAmount: fin.paidAmount,
+        balanceAmount: fin.balanceAmount,
+        status: Number(fin.balanceAmount) === 0 ? 'PAID' : (Number(fin.paidAmount) > 0 ? 'PARTIAL' : 'ISSUED'),
+        dueDate: eventDate,
+        terms: '',
+        notes: `Invoice generated for Booking #${bookingNumber}`,
+      }).returning();
+
+      // If advance payment was made, generate payment receipt
+      if (Number(advancePayment) > 0) {
 
         const [maxRec] = await tx
           .select({ receiptNumber: payments.receiptNumber })
@@ -1977,7 +1995,7 @@ app.post('/api/v1/bookings', authenticate, requireRoles(['OWNER', 'MANAGER', 'RE
         details: `Created booking #${bookingNumber} (${eventType} on ${eventDate}) for Total: ₹${fin.grandTotal} (Hall: ${selectedHall?.name || 'None'}, Rooms: ${selectedRoomsList.length})`,
       });
 
-      return { booking: newBooking, customer: cust, hall: selectedHall, fin };
+      return { booking: newBooking, customer: cust, hall: selectedHall, invoice: newInvoice, fin };
     });
 
     await updateCustomerFinances(customerId);
@@ -1988,6 +2006,8 @@ app.post('/api/v1/bookings', authenticate, requireRoles(['OWNER', 'MANAGER', 'RE
         ...result.booking,
         customer: result.customer,
         hall: result.hall,
+        invoice: result.invoice,
+        invoices: result.invoice ? [result.invoice] : [],
       },
     });
   } catch (err: any) {

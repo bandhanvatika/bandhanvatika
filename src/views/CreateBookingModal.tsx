@@ -511,18 +511,27 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
     }
   };
 
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setCreatedBookingResult(null);
+      setStep(1);
+    }
+  }, [isOpen]);
+
   if (createdBookingResult) {
-    const bkg = createdBookingResult.booking;
+    const bkg = (createdBookingResult as any).booking || createdBookingResult;
     const cust =
-      createdBookingResult.customer ||
+      (createdBookingResult as any).customer ||
+      bkg.customer ||
       customersList.find((c) => c.id === bkg.customerId) ||
       (isNewCustomer ? { name: newCustName, mobile: newCustMobile, address: newCustAddress } : null);
-    const hall = createdBookingResult.hall || selectedHall;
+    const hall = (createdBookingResult as any).hall || bkg.hall || selectedHall;
     const fullBooking = {
       ...bkg,
       customer: cust,
       hall,
-      services,
+      services: bkg.services || services,
       hallRentalPrice: waiveHallFee ? 0 : (selectedHall?.basePrice || 0),
     };
     const bkgAdvance = Number(bkg.paidAmount !== undefined ? bkg.paidAmount : (Number(advancePayment) || 0));
@@ -532,11 +541,12 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={() => {
+          setCreatedBookingResult(null);
           onSuccess();
           onClose();
         }}
         title="सट्टा / बुकिंग दर्ज हो गई (Booking Confirmed)"
-        subtitle={`Booking #${bkg.bookingNumber}`}
+        subtitle={`Booking #${bkg.bookingNumber || 'BV-BKG'}`}
         maxWidth="3xl"
       >
         <div className="space-y-6 text-center py-4">
@@ -637,6 +647,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             <button
               type="button"
               onClick={() => {
+                setCreatedBookingResult(null);
                 onSuccess();
                 onClose();
               }}
@@ -646,8 +657,8 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             </button>
           </div>
 
-          {/* Hidden print targets */}
-          <div className="hidden">
+          {/* Offscreen print targets */}
+          <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', width: '210mm', opacity: 0, pointerEvents: 'none' }}>
             <div id="bandhan-new-booking-slip">
               <BookingSlip
                 booking={fullBooking}
@@ -657,10 +668,19 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
               />
             </div>
             <div id="bandhan-new-booking-bill">
-              <OfficialBillSlip
-                billNumber={bkg.bookingNumber?.replace('BV-BKG-', 'BKG-') || '118'}
-                date={new Date().toLocaleDateString('en-GB')}
-                billType={bkg.eventType?.toLowerCase().includes('jeevika') ? 'FOOD BILL' : 'HOTEL / FOOD BILL'}
+              {(() => {
+                const linkedInv =
+                  (createdBookingResult as any).invoice ||
+                  ((createdBookingResult as any).invoices && (createdBookingResult as any).invoices[0]);
+                const billNo =
+                  linkedInv?.invoiceNumber?.replace('INV-', '') ||
+                  bkg.bookingNumber?.replace('BV-BKG-', 'BKG-') ||
+                  '118';
+                return (
+                  <OfficialBillSlip
+                    billNumber={billNo}
+                    date={new Date().toLocaleDateString('en-GB')}
+                    billType={bkg.eventType?.toLowerCase().includes('jeevika') ? 'FOOD BILL' : 'HOTEL / FOOD BILL'}
                 customerName={cust?.name || ''}
                 customerAddress={cust?.address || 'Pakariyabar, Chandwa, Ara'}
                 customerMobile={cust?.mobile || ''}
@@ -683,7 +703,9 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
                 balanceAmount={bkgBalance}
                 showTerms={false}
               />
-            </div>
+            );
+          })()}
+        </div>
           </div>
         </div>
       </Modal>
@@ -1591,7 +1613,7 @@ export const CreateBookingModal: React.FC<CreateBookingModalProps> = ({
             </div>
             <div className="flex justify-between text-xs text-emerald-300 font-semibold pt-1">
               <span>Advance Payment</span>
-              <span>₹{advancePayment.toLocaleString('en-IN')}</span>
+              <span>₹{(Number(advancePayment) || 0).toLocaleString('en-IN')}</span>
             </div>
             <div className="flex justify-between text-xs text-rose-300 font-bold">
               <span>Remaining Balance Due</span>
