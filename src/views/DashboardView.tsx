@@ -112,9 +112,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="mt-3 flex items-baseline justify-between">
             <span className="text-2xl font-black font-brand text-[#14281D]">{stats.totalBookings}</span>
-            <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center">
-              <TrendingUp className="w-3 h-3 mr-0.5" /> +12% MoM
-            </span>
+            {stats.totalBookings > 0 ? (
+              <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center">
+                <TrendingUp className="w-3 h-3 mr-0.5" /> Active
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md">
+                0 Active
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-stone-400 mt-1">Across all halls & lawns</p>
         </div>

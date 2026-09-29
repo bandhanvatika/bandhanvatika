@@ -9,6 +9,7 @@ import {
   expenses,
   customers,
   auditLogs,
+  halls,
 } from '../src/db/schema.ts';
 
 async function clearDemoData() {
@@ -42,7 +43,13 @@ async function clearDemoData() {
     await db.delete(auditLogs);
     console.log('✓ Cleared all demo audit logs');
 
-    console.log('SUCCESS: All demo data has been completely removed from the software.');
+    // Remove any test halls created during testing (keeping only 4 master halls)
+    const masterHallIds = ['hall-grand', 'hall-royal', 'hall-party', 'hall-utsav'];
+    const { notInArray } = await import('drizzle-orm');
+    await db.delete(halls).where(notInArray(halls.id, masterHallIds));
+    console.log('✓ Removed test halls (kept official 4 master halls)');
+
+    console.log('SUCCESS: All demo and test data has been completely removed from the software.');
     process.exit(0);
   } catch (error) {
     console.error('Error clearing demo data:', error);

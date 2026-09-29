@@ -262,21 +262,29 @@ app.get('/api/v1/dashboard', authenticate, async (req: AuthenticatedRequest, res
       totalExpenseAmount += Number(e.amount || 0);
     }
 
-    // Monthly revenue distribution (Jan - Dec)
-    const monthlyData = [
-      { month: 'Jan', amount: 35000 },
-      { month: 'Feb', amount: 50000 },
-      { month: 'Mar', amount: 45000 },
-      { month: 'Apr', amount: 70000 },
-      { month: 'May', amount: 85000 },
-      { month: 'Jun', amount: 60000 },
-      { month: 'Jul', amount: 90000 },
-      { month: 'Aug', amount: 110000 },
-      { month: 'Sep', amount: 105000 },
-      { month: 'Oct', amount: 130000 },
-      { month: 'Nov', amount: 150000 },
-      { month: 'Dec', amount: 180000 },
-    ];
+    // Monthly revenue distribution (Jan - Dec) dynamically computed from actual bookings
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+    const monthlyMap: Record<number, number> = {};
+    for (let i = 0; i < 12; i++) monthlyMap[i] = 0;
+
+    for (const b of allBookings) {
+      if (b.status !== 'CANCELLED' && b.eventDate) {
+        const parts = String(b.eventDate).split('-');
+        if (parts.length >= 2) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          if (y === currentYear && m >= 0 && m < 12) {
+            monthlyMap[m] += Number(b.grandTotal || 0);
+          }
+        }
+      }
+    }
+
+    const monthlyData = monthNames.map((month, idx) => ({
+      month,
+      amount: monthlyMap[idx] || 0,
+    }));
 
     // Upcoming bookings (sorted by date)
     const custMap = new Map(allCustomers.map((c) => [c.id, c]));
